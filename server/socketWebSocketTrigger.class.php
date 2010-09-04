@@ -12,6 +12,24 @@
 
 class socketWebSocketTrigger extends socketWebSocket
 {
+		function run($action){
+			if( method_exists('socketWebSocketTrigger',$action) ){
+				$msg = array('response' => 'sucess', 'text' => socketWebSocketTrigger::$action());
+				$retval = json_encode($msg);
+				$this->console('executing '.$action);
+			}else{
+				$msg = array('response' => 'cannot find', 'text'=> 'blank');
+				$retval = json_encode($msg);
+				$this->console('cannot find: '.$action);
+			}
+			
+			return $retval;
+		}
+		
+		function move(){
+			
+		}
+		
 		function hello()
 		{
 			$a = 'hello, how are you?';

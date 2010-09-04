@@ -31,8 +31,8 @@ class socketWebSocket extends socket
 			# to keep our connected sockets list
 			$changed_sockets = $this->allsockets;
 
-			# blocks execution until data is received from any socket
-			$num_sockets = socket_select($changed_sockets,$write=NULL,$exceptions=NULL,NULL);
+			# blocks execution if timeout is set to null
+			$num_sockets = socket_select($changed_sockets,$write=NULL,$exceptions=NULL, $timeout = 0);
 
 			# foreach changed socket...
 			foreach( $changed_sockets as $socket )
@@ -83,21 +83,9 @@ class socketWebSocket extends socket
 						else
 						{
 							$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
-							$this->console("<{$action}");
 							
-
-							if( method_exists('socketWebSocketTrigger',$action) )
-							{
-								$this->send($socket,socketWebSocketTrigger::$action());
-							}
-							
-							else
-							{
-								for ($i = 0; $i <= 0; $i++) {
-									$this->send($socket,"{$action}");
-								}
-							}
-
+							$msg = socketWebSocketTrigger::run($action);
+							$this->send($socket,$msg);
 						}
 					}
 				}
@@ -141,7 +129,7 @@ class socketWebSocket extends socket
 	 */
 	protected function send($client,$msg)
 	{
-		$this->console(">{$msg}");
+		$this->console(">>>{$msg}");
 
 		parent::send($client,chr(0).$msg.chr(255));
 	}

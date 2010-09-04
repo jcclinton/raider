@@ -19,47 +19,57 @@ $(document).ready(function() {
 			
 			try{
 				var socket = new WebSocket(host);
-				message('<p class="event">Socket Status: '+socket.readyState);
+				message('<p class="event">Socket Status: '+socket.readyState+'</p>');
 				socket.onopen = function(){
-					message('<p class="event">Socket Status: '+socket.readyState+' (open)');	
+					message('<p class="event">Socket Status: '+socket.readyState+' (open)'+'</p>');	
 				}
 				
 				socket.onmessage = function(msg){
-					message('<p class="message">Received: '+msg.data);					
+					message(msg.data, 1);					
 				}
 				
 				socket.onclose = function(){
-					message('<p class="event">Socket Status: '+socket.readyState+' (Closed)');
+					message('<p class="event">Socket Status: '+socket.readyState+' (Closed)'+'</p>');
 				}			
 					
 			} catch(exception){
-				message('<p>Error'+exception);
+				message('<p>Error'+exception+'</p>');
 			}
 				
 			function send(){
 				var text = $('#text').val();
 				if(text==""){
-					message('<p class="warning">Please enter a message');
+					message('<p class="warning">Please enter a message'+'</p>');
 					return ;	
 				}
 				try{
 					socket.send(text);
-					message('<p class="event">Sent: '+text)
+					message('<p class="event">Sent: '+text+'</p>')
 				} catch(exception){
-					message('<p class="warning">');
+					message('<p class="warning">'+'</p>');
 				}
 				$('#text').val("");
 			}
 			
-			function message(msg){
-				$('#chatLog').append(msg+'</p>');
+			function message(msg, type){
+				if(type == 1){
+					msg = "msg = "+msg;
+					eval(msg);
+					msg = msg.text;
+					msg = '<p class="message">Received: ' + msg + '</p>';
+				}
+				$('#chatLog').append(msg);
 			}//End message()
 			
 			$('#text').keypress(function(event) {
 					  if (event.keyCode == '13') {
 						 send();
 					   }
-			});	
+			});
+			
+			$('#text').click(function() {
+				socket.send("{'action':'yo', 'x':150, 'y':150}");
+			});
 			
 			$('#disconnect').click(function(){
 				socket.close();
