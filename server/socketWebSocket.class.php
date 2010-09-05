@@ -11,6 +11,11 @@ class socketWebSocket extends socket
 {
 	private $clients = array();
 	private $handshakes = array();
+	
+	private $unit = array();
+	private $queue = array();
+	
+	private $dt = 0;
 
 	public function __construct()
 	{
@@ -24,71 +29,153 @@ class socketWebSocket extends socket
 	 */
 	private function run()
 	{
+		$time_end = microtime(true);
+		$this->init();
 		while(true)
 		{
-			# because socket_select gets the sockets it should watch from $changed_sockets
-			# and writes the changed sockets to that array we have to copy the allsocket array
-			# to keep our connected sockets list
-			$changed_sockets = $this->allsockets;
+			$time_start = microtime(true);
+			$this->dt = $time_start - $time_end;
+			$time_end = $time_start;
+			
+			$this->getInput();
+			$this->update();
+			$this->sendResponse();
+		}// end game loop
+	}
+	
+	private function init(){
+		$unit = array();
+		$unit['speed'] = 250; //pixels per second
+		$unit['x'] = 400;
+		$unit['y'] = 400;
+		$unit['dx'] = null;
+		$unit['dy'] = null;
+		$unit['status'] = 'stopped';
+		$this->unit = $unit;
+	}
+	
+	private function getInput(){
+		# because socket_select gets the sockets it should watch from $changed_sockets
+		# and writes the changed sockets to that array we have to copy the allsocket array
+		# to keep our connected sockets list
+		$changed_sockets = $this->allsockets;
 
-			# blocks execution if timeout is set to null
-			$num_sockets = socket_select($changed_sockets,$write=NULL,$exceptions=NULL, $timeout = 0);
+		# blocks execution if timeout is set to null
+		$num_sockets = socket_select($changed_sockets,$write=NULL,$exceptions=NULL, $timeout = 0);
 
-			# foreach changed socket...
-			foreach( $changed_sockets as $socket )
+		# foreach changed socket...
+		foreach( $changed_sockets as $socket )
+		{
+			# master socket changed means there is a new socket request
+			if( $socket==$this->master )
 			{
-				# master socket changed means there is a new socket request
-				if( $socket==$this->master )
+				# if accepting new socket fails
+				if( ($client=socket_accept($this->master)) < 0 )
 				{
-					# if accepting new socket fails
-					if( ($client=socket_accept($this->master)) < 0 )
-					{
-						console('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
-						continue;
-					}
-					# if it is successful push the client to the allsockets array
-					else
-					{
-						$this->allsockets[] = $client;
-
-						# using array key from allsockets array, is that ok?
-						# i want to avoid the often array_search calls
-						$socket_index = array_search($client,$this->allsockets);
-						$this->clients[$socket_index] = new stdClass;
-						$this->clients[$socket_index]->socket_id = $client;
-
-						$this->console($client . ' CONNECTED!');
-					}
+					console('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
+					continue;
 				}
-				# client socket has sent data
+				# if it is successful push the client to the allsockets array
 				else
 				{
-					$socket_index = array_search($socket,$this->allsockets);
+					$this->allsockets[] = $client;
 
-					# the client status changed, but theres no data ---> disconnect
-					$bytes = @socket_recv($socket,$buffer,2048,0);
-					if( $bytes === 0 )
+					# using array key from allsockets array, is that ok?
+					# i want to avoid the often array_search calls
+					$socket_index = array_search($client,$this->allsockets);
+					$this->clients[$socket_index] = new stdClass;
+					$this->clients[$socket_index]->socket_id = $client;
+
+					$this->console($client . ' CONNECTED!');
+				}
+			}
+			# client socket has sent data
+			else
+			{
+				$socket_index = array_search($socket,$this->allsockets);
+
+				# the client status changed, but theres no data ---> disconnect
+				$bytes = @socket_recv($socket,$buffer,2048,0);
+				if( $bytes === 0 )
+				{
+					$this->disconnected($socket);
+				}
+				# there is data to be read
+				else
+				{
+					# this is a new connection, no handshake yet
+					if( !isset($this->handshakes[$socket_index]) )
 					{
-						$this->disconnected($socket);
+						$this->do_handshake($buffer,$socket,$socket_index);
 					}
-					# there is data to be read
+					# handshake already done, read data
 					else
 					{
-						# this is a new connection, no handshake yet
-						if( !isset($this->handshakes[$socket_index]) )
-						{
-							$this->do_handshake($buffer,$socket,$socket_index);
-						}
-						# handshake already done, read data
-						else
-						{
-							$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
-							
-							$msg = socketWebSocketTrigger::run($action);
-							$this->send($socket,$msg);
-						}
+						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
+						
+						$this->queue[] = $action;
+						
+						$msg = socketWebSocketTrigger::run($action);
+						$this->send($socket,$msg);
 					}
 				}
+			}
+		}// end foreach changed sockets
+	}
+	
+	private function update(){
+		if(!empty($this->queue)){
+			foreach($this->queue as $action){
+				$data = json_decode($action, true);
+				if($data['action'] == 'move' && isset($data['x']) && isset($data['y'])){
+					$this->unit['dx'] = $data['x'];
+					$this->unit['dy'] = $data['y'];
+				}
+			}
+			$this->queue = array();
+		}
+		
+		$this->updatePosition();
+	}
+	
+	private function sendResponse(){
+		if($this->unit['status'] == 'moving'){
+			$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
+			$retval = json_encode($msg);
+			
+			foreach($this->allsockets as $socket){
+				if( $socket!=$this->master ){
+					$this->send($socket, $retval);
+				}
+			}
+		}
+	}
+	
+	private function updatePosition(){
+		if(!is_null($this->unit['dx'] ) || !is_null($this->unit['dy'])){
+			$diffx = $this->unit['dx'] - $this->unit['x'];
+			$diffy = $this->unit['dy'] - $this->unit['y'];
+			
+			if($diffx == 0 && $diffy == 0){
+				$this->unit['dx'] = null;
+				$this->unit['dy'] = null;
+			}else if($diffx < 1 && $diffy < 1){
+				$this->unit['x'] = $this->unit['dx'];
+				$this->unit['y'] = $this->unit['dy'];
+			}else{			
+				$denom = sqrt($diffx^2 + $diffy^2);			
+				$rads = arcsin($diffy/$denom);
+				
+				$this->unit['x'] = $this->unit['speed'] * $this->dt * cos($rads);
+				$this->unit['y'] = $this->unit['speed'] * $this->dt * sin($rads);
+			}
+			
+			if($this->unit['status'] != 'moving'){
+				$this->unit['status'] = 'moving';
+			}
+		}else{
+			if($this->unit['status'] == 'moving'){
+				$this->unit['status'] = 'stopped';
 			}
 		}
 	}

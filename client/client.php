@@ -10,7 +10,39 @@ $(document).ready(function() {
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');		
 	}else{
 		//The user has WebSockets
+		
+		
+    function draw() {  
+      var canvas = document.getElementById("canvas");  
+      if (canvas.getContext) {
+        var ctx = canvas.getContext("2d");
+		  
+		  var img = new Image();  
+		 img.onload = function(){  
+			ctx.drawImage(img,200,200);  
+		 }  
+		  img.src = 'zoqfot.big.12.png';
+		  
+      canvas.onmousedown = function(e) {
+        var mx = e.clientX;
+        var my = e.clientY;
+        ctx.drawImage(img, mx, my);
+				$('#chatLog').append('clicked at mx:'+mx+' my: '+my+'<br/>');
+      }
+		  
+			
+  
+       /* ctx.fillStyle = "rgb(200,0,0)";  
+        ctx.fillRect (10, 10, 55, 50);  
+  
+        ctx.fillStyle = "rgba(0, 0, 200, 0.5)";  
+        ctx.fillRect (30, 30, 55, 50);  */
+      }  
+    } 
+	 
+	 $('#canvas').append('<img src="zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
 	
+	//draw();
 	connect();
 		
 	function connect(){
@@ -24,9 +56,7 @@ $(document).ready(function() {
 					message('<p class="event">Socket Status: '+socket.readyState+' (open)'+'</p>');	
 				}
 				
-				socket.onmessage = function(msg){
-					message(msg.data, 1);					
-				}
+				socket.onmessage = receive;
 				
 				socket.onclose = function(){
 					message('<p class="event">Socket Status: '+socket.readyState+' (Closed)'+'</p>');
@@ -34,6 +64,23 @@ $(document).ready(function() {
 					
 			} catch(exception){
 				message('<p>Error'+exception+'</p>');
+			}
+			
+			function receive(msg){
+				message(msg.data, 1);
+				msg = "msg = "+msg.data;
+				eval(msg);
+				var speed;
+				if(msg.text == 'moving'){
+					speed = 100;				
+				}else{
+					msg = msg.text;
+				}
+				$('#chatLog').append(msg.x + ', '+  msg.y);
+				$('#sprite').animate({
+					top: msg.y,
+					left: msg.x
+				}, speed);
 			}
 				
 			function send(){
@@ -68,14 +115,22 @@ $(document).ready(function() {
 			});
 			
 			$('#text').click(function() {
-				socket.send("{'action':'yo', 'x':150, 'y':150}");
+				//socket.send("{'action':'yo', 'x':150, 'y':150}");
+			});
+			
+			$('#canvas').click(function(e) {
+				var x = e.pageX - this.offsetLeft;
+				var y = e.pageY - this.offsetTop;
+				
+				//$('#chatLog').append(x +', '+ y + '<br/>');
+				socket.send('{"action":"move", "x":'+x+', "y":'+y+'}');
 			});
 			
 			$('#disconnect').click(function(){
 				socket.close();
 			});
 
-		}
+		}		
 		
 		
 	}//End connect()
@@ -106,6 +161,8 @@ body{font-family:Arial, Helvetica, sans-serif;}
 
 </head>
 <body>
+	<!--canvas id="canvas" width="400" height="400" style="outline: 1px solid black"></canvas-->
+	<div id="canvas" style="outline:1px solid black; height:400px; width:400px; position:relative;"></div>
   <div id="wrapper">
   
   	<div id="container">

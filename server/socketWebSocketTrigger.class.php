@@ -13,8 +13,11 @@
 class socketWebSocketTrigger extends socketWebSocket
 {
 		function run($action){
+			$data = json_decode($action, true);
+			$action = isset($data['action'])?$data['action']:$action;
+			//$this->console(print_r($action, true));
 			if( method_exists('socketWebSocketTrigger',$action) ){
-				$msg = array('response' => 'sucess', 'text' => socketWebSocketTrigger::$action());
+				$msg = array('response' => 'sucess', 'text' => socketWebSocketTrigger::$action($data));
 				$retval = json_encode($msg);
 				$this->console('executing '.$action);
 			}else{
@@ -26,8 +29,13 @@ class socketWebSocketTrigger extends socketWebSocket
 			return $retval;
 		}
 		
-		function move(){
-			
+		function move($data){
+			$retval = array('action'=>'move');
+			if(isset($data['x']))
+				$retval['x'] = $data['x'];
+			if(isset($data['y']))
+				$retval['y'] = $data['y'];
+			return $retval;
 		}
 		
 		function hello()
