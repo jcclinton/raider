@@ -72,15 +72,15 @@ $(document).ready(function() {
 				eval(msg);
 				var speed;
 				if(msg.text == 'moving'){
-					speed = 100;				
+					speed = 10;
+					$('#sprite').animate({
+						top: msg.y,
+						left: msg.x
+					}, speed);
+					$('#chatLog').append(msg.x + ', '+  msg.y);	
 				}else{
 					msg = msg.text;
 				}
-				$('#chatLog').append(msg.x + ', '+  msg.y);
-				$('#sprite').animate({
-					top: msg.y,
-					left: msg.x
-				}, speed);
 			}
 				
 			function send(){

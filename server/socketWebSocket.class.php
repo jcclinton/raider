@@ -40,18 +40,23 @@ class socketWebSocket extends socket
 			$this->getInput();
 			$this->update();
 			$this->sendResponse();
+			if($this->dt < .1){
+				usleep(10000);
+			}
 		}// end game loop
 	}
 	
 	private function init(){
 		$unit = array();
 		$unit['speed'] = 250; //pixels per second
-		$unit['x'] = 400;
-		$unit['y'] = 400;
+		$unit['x'] = 200;
+		$unit['y'] = 200;
 		$unit['dx'] = null;
 		$unit['dy'] = null;
 		$unit['status'] = 'stopped';
 		$this->unit = $unit;
+		
+		$this->queue = array();
 	}
 	
 	private function getInput(){
@@ -107,6 +112,7 @@ class socketWebSocket extends socket
 					if( !isset($this->handshakes[$socket_index]) )
 					{
 						$this->do_handshake($buffer,$socket,$socket_index);
+						$this->init();
 					}
 					# handshake already done, read data
 					else
@@ -116,7 +122,7 @@ class socketWebSocket extends socket
 						$this->queue[] = $action;
 						
 						$msg = socketWebSocketTrigger::run($action);
-						$this->send($socket,$msg);
+						//$this->send($socket,$msg);
 					}
 				}
 			}
@@ -130,6 +136,7 @@ class socketWebSocket extends socket
 				if($data['action'] == 'move' && isset($data['x']) && isset($data['y'])){
 					$this->unit['dx'] = $data['x'];
 					$this->unit['dy'] = $data['y'];
+					$this->console('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$this->unit['dx'] . ', '.$this->unit['dy']);
 				}
 			}
 			$this->queue = array();
@@ -142,6 +149,7 @@ class socketWebSocket extends socket
 		if($this->unit['status'] == 'moving'){
 			$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
 			$retval = json_encode($msg);
+				$this->console('moving and sending: '.$retval);
 			
 			foreach($this->allsockets as $socket){
 				if( $socket!=$this->master ){
@@ -155,19 +163,25 @@ class socketWebSocket extends socket
 		if(!is_null($this->unit['dx'] ) || !is_null($this->unit['dy'])){
 			$diffx = $this->unit['dx'] - $this->unit['x'];
 			$diffy = $this->unit['dy'] - $this->unit['y'];
+					$this->console('diffs: '.$diffx . ', '.$diffy);
 			
-			if($diffx == 0 && $diffy == 0){
+			if(($diffx == 0 && $diffy == 0) || ($this->unit['x'] < 20 || $this->unit['y'] < 20 || $this->unit['x'] > 380 || $this->unit['y'] > 380)){
 				$this->unit['dx'] = null;
 				$this->unit['dy'] = null;
-			}else if($diffx < 1 && $diffy < 1){
+				$this->console('not moving');
+			}else if(abs($diffx) < 1 && abs($diffy) < 1){
 				$this->unit['x'] = $this->unit['dx'];
 				$this->unit['y'] = $this->unit['dy'];
-			}else{			
-				$denom = sqrt($diffx^2 + $diffy^2);			
-				$rads = arcsin($diffy/$denom);
+				$this->console('snapping shut');
+			}else{
+				$denom = sqrt(pow($diffx,2) + pow($diffy,2));			
+				$rads = asin($diffy/$denom);
 				
-				$this->unit['x'] = $this->unit['speed'] * $this->dt * cos($rads);
-				$this->unit['y'] = $this->unit['speed'] * $this->dt * sin($rads);
+					$this->console('currently at: '.$this->unit['x'].','.$this->unit['y']);
+				$this->unit['x'] += $this->unit['speed'] * $this->dt * cos($rads)*(-1);
+				$this->unit['y'] += $this->unit['speed'] * $this->dt * sin($rads);
+				$this->console('moving with speed: '.$this->unit['speed'] . ' and dt: '.$this->dt . ' and cos,sin: '.cos($rads) . ', '. sin($rads) . ' and denom/rads: ' . $denom . ', ' . $rads );
+					$this->console('now at: '.$this->unit['x'].','.$this->unit['y']);
 			}
 			
 			if($this->unit['status'] != 'moving'){

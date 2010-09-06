@@ -23,20 +23,20 @@ class socketWebSocketTrigger extends socketWebSocket
 			}else{
 				$msg = array('response' => 'cannot find', 'text'=> 'blank');
 				$retval = json_encode($msg);
-				$this->console('cannot find: '.$action);
+				//$this->console('cannot find: '.$action);
 			}
 			
 			return $retval;
 		}
 		
-		function move($data){
+		/*function move($data){
 			$retval = array('action'=>'move');
 			if(isset($data['x']))
 				$retval['x'] = $data['x'];
 			if(isset($data['y']))
 				$retval['y'] = $data['y'];
 			return $retval;
-		}
+		}*/
 		
 		function hello()
 		{
