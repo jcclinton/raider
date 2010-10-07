@@ -7,27 +7,27 @@
  * @package phpWebSockets
  */
 
-class socketWebSocket extends socket
+class WebSocket extends socket
 {
 	private $clients = array();
 	private $handshakes = array();
 	
-	private $unit = array();
+	//private $unit = array();
 	private $queue = array();
 	
-	private $dt = 0;
+	//private $dt = 0;
 
 	public function __construct()
 	{
 		parent::__construct();
 
-		$this->run();
+		//$this->run();
 	}
 
 	/**
 	 * Runs the while loop, wait for connections and handle them
 	 */
-	private function run()
+	/*private function run()
 	{
 		$time_end = microtime(true);
 		$this->init();
@@ -44,9 +44,9 @@ class socketWebSocket extends socket
 				usleep(10000);
 			}
 		}// end game loop
-	}
+	}*/
 	
-	private function init(){
+	/*private function init(){
 		$unit = array();
 		$unit['speed'] = 250; //pixels per second
 		$unit['x'] = 200;
@@ -57,9 +57,12 @@ class socketWebSocket extends socket
 		$this->unit = $unit;
 		
 		$this->queue = array();
-	}
+	}*/
 	
 	private function getInput(){
+		
+		$queue = array();
+		
 		# because socket_select gets the sockets it should watch from $changed_sockets
 		# and writes the changed sockets to that array we have to copy the allsocket array
 		# to keep our connected sockets list
@@ -112,24 +115,26 @@ class socketWebSocket extends socket
 					if( !isset($this->handshakes[$socket_index]) )
 					{
 						$this->do_handshake($buffer,$socket,$socket_index);
-						$this->init();
+						//$this->init();
 					}
 					# handshake already done, read data
 					else
 					{
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
 						
-						$this->queue[] = $action;
+						$queue[] = $action;
 						
-						$msg = socketWebSocketTrigger::run($action);
+						//$msg = socketWebSocketTrigger::run($action);
 						//$this->send($socket,$msg);
 					}
 				}
 			}
 		}// end foreach changed sockets
+		
+		return $queue;
 	}
 	
-	private function update(){
+	/*private function update(){
 		if(!empty($this->queue)){
 			foreach($this->queue as $action){
 				$data = json_decode($action, true);
@@ -143,23 +148,21 @@ class socketWebSocket extends socket
 		}
 		
 		$this->updatePosition();
-	}
+	}*/
 	
-	private function sendResponse(){
-		if($this->unit['status'] == 'moving'){
-			$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
-			$retval = json_encode($msg);
-				$this->console('moving and sending: '.$retval);
-			
-			foreach($this->allsockets as $socket){
-				if( $socket!=$this->master ){
-					$this->send($socket, $retval);
-				}
+	private function sendResponse($msg){
+		//$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
+		$retval = json_encode($msg);
+		$this->console('Sending: '.$retval);
+		
+		foreach($this->allsockets as $socket){
+			if( $socket!=$this->master ){
+				$this->send($socket, $retval);
 			}
 		}
 	}
 	
-	private function updatePosition(){
+	/*private function updatePosition(){
 		if(!is_null($this->unit['dx'] ) || !is_null($this->unit['dy'])){
 			$diffx = $this->unit['dx'] - $this->unit['x'];
 			$diffy = $this->unit['dy'] - $this->unit['y'];
@@ -192,7 +195,7 @@ class socketWebSocket extends socket
 				$this->unit['status'] = 'stopped';
 			}
 		}
-	}
+	}*/
 
 	/**
 	 * Manage the handshake procedure

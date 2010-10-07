@@ -13,10 +13,11 @@
 
 ob_implicit_flush(true);
 
-require 'socket.class.php';
-require 'socketWebSocket.class.php';
-require 'socketWebSocketTrigger.class.php';
+require 'env.inc.php';
 
-$WebSocket = new socketWebSocket('localhost',8000);
+//$WebSocket = new socketWebSocket('localhost',8000);
+
+$gameLoop = new GameLoop();
+$gameLoop->run();
 
 ?>

@@ -1,0 +1,5 @@
+<?php
+
+autoloader::init();
+
+?>
