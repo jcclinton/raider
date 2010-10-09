@@ -1,6 +1,6 @@
 <?php
 
-class Unit
+class Unit extends User
 {
 
 	private $unit = array();
@@ -8,6 +8,8 @@ class Unit
 
 	public function __construct(&$websocket)
 	{
+		parent::__construct();
+		
 		$this->websocket = $websocket;
 		$this->init();
 	}

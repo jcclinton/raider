@@ -10,7 +10,7 @@
 		 img.onload = function(){
 			ctx.drawImage(img,200,200);
 		 }
-		  img.src = 'zoqfot.big.12.png';
+		  img.src = 'images/zoqfot.big.12.png';
 
       canvas.onmousedown = function(e) {
         var mx = e.clientX;
@@ -40,14 +40,17 @@
 			try{
 				var socket = new WebSocket(host);
 				message('<p class="event">Socket Status: '+socket.readyState+'</p>');
+					socket.isConnected = true;
 				socket.onopen = function(){
+					socket.isConnected = true;
 					message('<p class="event">Socket Status: '+socket.readyState+' (open)'+'</p>');
 				}
 
 				socket.onmessage = receive;
 
 				socket.onclose = function(){
-					message('<p class="event">Socket Status: '+socket.readyState+' (Closed)'+'</p>');
+					socket.isConnected = false;
+					message('<p class="event bad">Socket Status: '+socket.readyState+' (Closed)'+'</p>');
 				}
 
 			} catch(exception){
@@ -72,18 +75,23 @@
 			}
 
 			function send(){
-				var text = $('#text').val();
-				if(text==""){
-					message('<p class="warning">Please enter a message'+'</p>');
-					return ;
+				if(socket.isConnected){
+					var text = $('#text').val();
+					if(text==""){
+						message('<p class="warning">Please enter a message'+'</p>');
+						return ;
+					}
+					try{
+						socket.send(text);
+						message('<p class="event">Sent: '+text+'</p>')
+					} catch(exception){
+						message('<p class="warning">doh!</p>');
+					}
+					$('#text').val("");
+				}else{
+					message('<p class="event">Socket not connected!</p>')
+					$('#text').val("");
 				}
-				try{
-					socket.send(text);
-					message('<p class="event">Sent: '+text+'</p>')
-				} catch(exception){
-					message('<p class="warning">'+'</p>');
-				}
-				$('#text').val("");
 			}
 
 			function message(msg, type){
@@ -110,7 +118,9 @@
 				var x = e.pageX - this.offsetLeft;
 				var y = e.pageY - this.offsetTop;
 
-				$('#chatLog').append(x +', '+ y + '<br/>');
+				if(socket.isConnected){
+					$('#chatLog').append(x +', '+ y + '<br/>');
+				}
 				socket.send('{"action":"move", "x":'+x+', "y":'+y+'}');
 			});
 

@@ -24,7 +24,7 @@ $(document).ready(function() {
 
 		//loadjscssfile("socket.js", "js") //dynamically load and add this .js file
 
-		$('#canvas').append('<img src="zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
+		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
 
 		//draw();
 		socketController.connect();
@@ -50,6 +50,9 @@ body{font-family:Arial, Helvetica, sans-serif;}
 .warning{
 	font-weight:bold;
 	color:#CCC;
+}
+.bad{
+	color: red;
 }
 </style>
 <title>WebSockets Client</title>
