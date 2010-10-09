@@ -65,7 +65,7 @@
 						top: msg.y,
 						left: msg.x
 					}, speed);
-					$('#chatLog').append(msg.x + ', '+  msg.y);
+					$('#chatLog').append('<p>moving to: ' + msg.x + ', '+  msg.y + '</p>');
 				}else{
 					msg = msg.text;
 				}
@@ -110,7 +110,7 @@
 				var x = e.pageX - this.offsetLeft;
 				var y = e.pageY - this.offsetTop;
 
-				//$('#chatLog').append(x +', '+ y + '<br/>');
+				$('#chatLog').append(x +', '+ y + '<br/>');
 				socket.send('{"action":"move", "x":'+x+', "y":'+y+'}');
 			});
 

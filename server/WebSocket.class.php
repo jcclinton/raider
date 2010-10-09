@@ -114,7 +114,7 @@ class WebSocket extends socket
 					# this is a new connection, no handshake yet
 					if( !isset($this->handshakes[$socket_index]) )
 					{
-						$this->do_handshake($buffer,$socket,$socket_index);
+						$this->doHandshake($buffer,$socket,$socket_index);
 						//$this->init();
 					}
 					# handshake already done, read data
@@ -123,6 +123,7 @@ class WebSocket extends socket
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
 
 						$queue[] = $action;
+						$this->console('receiving: ' . $action);
 
 						//$msg = socketWebSocketTrigger::run($action);
 						//$this->send($socket,$msg);
@@ -204,7 +205,7 @@ class WebSocket extends socket
 	 * @param socket $socket The socket from which the data came
 	 * @param int $socket_index The socket index in the allsockets array
 	 */
-	private function do_handshake($buffer,$socket,$socket_index)
+	/*private function do_handshake($buffer,$socket,$socket_index)
 	{
 		$this->console('Requesting handshake...');
 
@@ -223,7 +224,74 @@ class WebSocket extends socket
 		socket_write($socket,$upgrade,strlen($upgrade));
 
 		$this->console('Done handshaking...');
-	}
+	}*/
+
+
+
+	    public function doHandshake($buffer, $socket, $socket_index) {
+
+        list($resource, $headers, $securityCode) = $this->handleRequestHeader($buffer);
+
+        $securityResponse = '';
+        if (isset($headers['Sec-WebSocket-Key1']) && isset($headers['Sec-WebSocket-Key2'])) {
+            $securityResponse = $this->getHandshakeSecurityKey($headers['Sec-WebSocket-Key1'], $headers['Sec-WebSocket-Key2'], $securityCode);
+        }
+
+        if ($securityResponse) {
+            $upgrade  = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+                "Upgrade: WebSocket\r\n" .
+                "Connection: Upgrade\r\n" .
+                "Sec-WebSocket-Origin: " . $headers['Origin'] . "\r\n" .
+                "Sec-WebSocket-Location: ws://" . $headers['Host'] . $resource . "\r\n" .
+                "\r\n".$securityResponse;
+        } else {
+            $upgrade  = "HTTP/1.1 101 Web Socket Protocol Handshake\r\n" .
+                "Upgrade: WebSocket\r\n" .
+                "Connection: Upgrade\r\n" .
+                "WebSocket-Origin: " . $headers['Origin'] . "\r\n" .
+                "WebSocket-Location: ws://" . $headers['Host'] . $resource . "\r\n" .
+                "\r\n";
+        }
+
+		$this->handshakes[$socket_index] = true;
+
+		socket_write($socket,$upgrade,strlen($upgrade));
+
+		$this->console('Done handshaking...');
+        return true;
+    }
+
+    private function handleSecurityKey($key) {
+        preg_match_all('/[0-9]/', $key, $number);
+        preg_match_all('/ /', $key, $space);
+        if ($number && $space) {
+            return implode('', $number[0]) / count($space[0]);
+        }
+        return '';
+    }
+
+    private function getHandshakeSecurityKey($key1, $key2, $code) {
+        return md5(
+            pack('N', $this->handleSecurityKey($key1)).
+            pack('N', $this->handleSecurityKey($key2)).
+            $code,
+            true
+        );
+    }
+
+    private function handleRequestHeader($request) {
+        $resource = $code = null;
+        preg_match('/GET (.*?) HTTP/', $request, $match) && $resource = $match[1];
+        preg_match("/\r\n(.*?)\$/", $request, $match) && $code = $match[1];
+        $headers = array();
+        foreach(explode("\r\n", $request) as $line) {
+            if (strpos($line, ': ') !== false) {
+                list($key, $value) = explode(': ', $line);
+                $headers[trim($key)] = trim($value);
+            }
+        }
+        return array($resource, $headers, $code);
+    }
 
 	/**
 	 * Extends the socket class send method to send WebSocket messages
@@ -255,6 +323,7 @@ class WebSocket extends socket
 
 		socket_close($socket);
 		$this->console($socket." disconnected!");
+		GameLoop::reset();
 	}
 
 	/**
@@ -282,7 +351,7 @@ class WebSocket extends socket
 	 * @param string $msg
 	 * @param string $type
 	 */
-	protected function console($msg,$type='WebSocket')
+	public function console($msg,$type='WebSocket')
 	{
 		parent::console($msg,$type);
 	}
