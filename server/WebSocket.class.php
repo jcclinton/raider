@@ -11,10 +11,10 @@ class WebSocket extends socket
 {
 	private $clients = array();
 	private $handshakes = array();
-	
+
 	//private $unit = array();
 	private $queue = array();
-	
+
 	//private $dt = 0;
 
 	public function __construct()
@@ -36,7 +36,7 @@ class WebSocket extends socket
 			$time_start = microtime(true);
 			$this->dt = $time_start - $time_end;
 			$time_end = $time_start;
-			
+
 			$this->getInput();
 			$this->update();
 			$this->sendResponse();
@@ -45,7 +45,7 @@ class WebSocket extends socket
 			}
 		}// end game loop
 	}*/
-	
+
 	/*private function init(){
 		$unit = array();
 		$unit['speed'] = 250; //pixels per second
@@ -55,14 +55,14 @@ class WebSocket extends socket
 		$unit['dy'] = null;
 		$unit['status'] = 'stopped';
 		$this->unit = $unit;
-		
+
 		$this->queue = array();
 	}*/
-	
-	private function getInput(){
-		
+
+	public function getInput(){
+
 		$queue = array();
-		
+
 		# because socket_select gets the sockets it should watch from $changed_sockets
 		# and writes the changed sockets to that array we have to copy the allsocket array
 		# to keep our connected sockets list
@@ -121,19 +121,19 @@ class WebSocket extends socket
 					else
 					{
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
-						
+
 						$queue[] = $action;
-						
+
 						//$msg = socketWebSocketTrigger::run($action);
 						//$this->send($socket,$msg);
 					}
 				}
 			}
 		}// end foreach changed sockets
-		
+
 		return $queue;
 	}
-	
+
 	/*private function update(){
 		if(!empty($this->queue)){
 			foreach($this->queue as $action){
@@ -146,28 +146,28 @@ class WebSocket extends socket
 			}
 			$this->queue = array();
 		}
-		
+
 		$this->updatePosition();
 	}*/
-	
-	private function sendResponse($msg){
+
+	public function sendResponse($msg){
 		//$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
 		$retval = json_encode($msg);
 		$this->console('Sending: '.$retval);
-		
+
 		foreach($this->allsockets as $socket){
 			if( $socket!=$this->master ){
 				$this->send($socket, $retval);
 			}
 		}
 	}
-	
+
 	/*private function updatePosition(){
 		if(!is_null($this->unit['dx'] ) || !is_null($this->unit['dy'])){
 			$diffx = $this->unit['dx'] - $this->unit['x'];
 			$diffy = $this->unit['dy'] - $this->unit['y'];
 					$this->console('diffs: '.$diffx . ', '.$diffy);
-			
+
 			if(($diffx == 0 && $diffy == 0) || ($this->unit['x'] < 20 || $this->unit['y'] < 20 || $this->unit['x'] > 380 || $this->unit['y'] > 380)){
 				$this->unit['dx'] = null;
 				$this->unit['dy'] = null;
@@ -177,16 +177,16 @@ class WebSocket extends socket
 				$this->unit['y'] = $this->unit['dy'];
 				$this->console('snapping shut');
 			}else{
-				$denom = sqrt(pow($diffx,2) + pow($diffy,2));			
+				$denom = sqrt(pow($diffx,2) + pow($diffy,2));
 				$rads = asin($diffy/$denom);
-				
+
 					$this->console('currently at: '.$this->unit['x'].','.$this->unit['y']);
 				$this->unit['x'] += $this->unit['speed'] * $this->dt * cos($rads)*(-1);
 				$this->unit['y'] += $this->unit['speed'] * $this->dt * sin($rads);
 				$this->console('moving with speed: '.$this->unit['speed'] . ' and dt: '.$this->dt . ' and cos,sin: '.cos($rads) . ', '. sin($rads) . ' and denom/rads: ' . $denom . ', ' . $rads );
 					$this->console('now at: '.$this->unit['x'].','.$this->unit['y']);
 			}
-			
+
 			if($this->unit['status'] != 'moving'){
 				$this->unit['status'] = 'moving';
 			}

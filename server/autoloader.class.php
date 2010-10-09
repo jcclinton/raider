@@ -13,10 +13,10 @@ class autoloader {
 
     public function __construct()
     {
-        spl_autoload_register(array($this,'class'));
+        spl_autoload_register(array($this,'class_load'));
     }
 
-    public function class($class)
+    public function class_load($class)
     {
         set_include_path(get_include_path().PATH_SEPARATOR.'/class/');
         spl_autoload_extensions('.class.php');
