@@ -1,131 +1,126 @@
 
 
 
-    function draw() {
-      var canvas = document.getElementById("canvas");
-      if (canvas.getContext) {
-        var ctx = canvas.getContext("2d");
+	Init = {}
+	Init.run = function(){
 
-		  var img = new Image();
-		 img.onload = function(){
-			ctx.drawImage(img,200,200);
-		 }
-		  img.src = 'images/zoqfot.big.12.png';
+		socketController.connect();
 
-      canvas.onmousedown = function(e) {
-        var mx = e.clientX;
-        var my = e.clientY;
-        ctx.drawImage(img, mx, my);
-				$('#chatLog').append('clicked at mx:'+mx+' my: '+my+'<br/>');
-      }
+		$('#canvas').click(function(e) {
+				var x = this.offsetLeft;
+				var y = this.offsetTop;
+			Interface.click(e, x, y);
+		});
+
+		$('#disconnect').click(function(){
+			socketController.close();
+		});
 
 
+		$('#text').keypress(function(event) {
+			Interface.keyboard(event);
+		});
 
-       /* ctx.fillStyle = "rgb(200,0,0)";
-        ctx.fillRect (10, 10, 55, 50);
+		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
 
-        ctx.fillStyle = "rgba(0, 0, 200, 0.5)";
-        ctx.fillRect (30, 30, 55, 50);  */
-      }
-    }
+	}
 
 
 
 	socketController = {};
-
 	socketController.connect = function(){
-			var socket;
 			var host = "ws://localhost:8000/php2d/server/startDaemon.php";
 
 			try{
-				var socket = new WebSocket(host);
-				message('<p class="event">Socket Status: '+socket.readyState+'</p>');
-					socket.isConnected = true;
-				socket.onopen = function(){
-					socket.isConnected = true;
-					message('<p class="event">Socket Status: '+socket.readyState+' (open)'+'</p>');
-				}
+				socketController.socket = new WebSocket(host);
+				socketController.message('<p class="event">Socket Status: '+socketController.socket.readyState+'</p>');
+				socketController.isConnected = true;
 
-				socket.onmessage = receive;
-
-				socket.onclose = function(){
-					socket.isConnected = false;
-					message('<p class="event bad">Socket Status: '+socket.readyState+' (Closed)'+'</p>');
-				}
+				//assign out relevant functions
+				socketController.socket.onopen = socketController.open;
+				socketController.socket.onmessage = socketController.receive;
+				socketController.socket.onclose = socketController.close;
 
 			} catch(exception){
-				message('<p>Error'+exception+'</p>');
+				socketController.message('<p>Error'+exception+'</p>');
 			}
+	}
 
-			function receive(msg){
-				message(msg.data, 1);
-				msg = "msg = "+msg.data;
-				eval(msg);
-				var speed;
-				if(msg.text == 'moving'){
-					speed = 10;
-					$('#sprite').animate({
-						top: msg.y,
-						left: msg.x
-					}, speed);
-					$('#chatLog').append('<p>moving to: ' + msg.x + ', '+  msg.y + '</p>');
-				}else{
-					msg = msg.text;
-				}
-			}
+	socketController.open = function(){
+		socketController.isConnected = true;
+		socketController.message('<p class="event">Socket Status: '+socketController.socket.readyState+' (open)'+'</p>');
+	}
 
-			function send(){
-				if(socket.isConnected){
-					var text = $('#text').val();
-					if(text==""){
-						message('<p class="warning">Please enter a message'+'</p>');
-						return ;
-					}
-					try{
-						socket.send(text);
-						message('<p class="event">Sent: '+text+'</p>')
-					} catch(exception){
-						message('<p class="warning">doh!</p>');
-					}
-					$('#text').val("");
-				}else{
-					message('<p class="event">Socket not connected!</p>')
-					$('#text').val("");
-				}
-			}
+	socketController.close = function(){
+		socketController.isConnected = false;
+		socketController.message('<p class="event bad">Socket Status: '+socketController.socket.readyState+' (Closed)'+'</p>');
+	}
 
-			function message(msg, type){
-				if(type == 1){
-					msg = "msg = "+msg;
-					eval(msg);
-					msg = msg.text;
-					msg = '<p class="message">Received: ' + msg + '</p>';
-				}
-				$('#chatLog').append(msg);
-			}//End message()
-
-			$('#text').keypress(function(event) {
-					  if (event.keyCode == '13') {
-						 send();
-					   }
-			});
-
-			$('#text').click(function() {
-				//socket.send("{'action':'yo', 'x':150, 'y':150}");
-			});
-
-			$('#canvas').click(function(e) {
-				var x = e.pageX - this.offsetLeft;
-				var y = e.pageY - this.offsetTop;
-
-				if(socket.isConnected){
-					$('#chatLog').append(x +', '+ y + '<br/>');
-				}
-				socket.send('{"action":"move", "x":'+x+', "y":'+y+'}');
-			});
-
-			$('#disconnect').click(function(){
-				socket.close();
-			});
-
+	socketController.receive = function(msg){
+		//socketController.message(msg.data, 1);
+		msg = socketController.getMessageObject(msg.data);
+		var speed;
+		if(msg.text == 'moving'){
+			speed = 10;
+			$('#sprite').animate({
+				top: msg.y,
+				left: msg.x
+			}, speed);
+			$('#chatLog').append('<p>moving to: ' + msg.x + ', '+  msg.y + '</p>');
+		}else{
+			msg = msg.text;
+			socketController.message('<p class="event">guh?</p>');
 		}
+	}
+
+	socketController.send = function(msg){
+		if(socketController.isConnected){
+			try{
+				socketController.socket.send(msg);
+				socketController.message('<p class="event">Sent: '+msg+'</p>')
+			} catch(exception){
+				socketController.message('<p class="warning">doh!</p>');
+			}
+		}else{
+			socketController.message('<p class="event">Socket not connected!</p>')
+		}
+	}
+
+	socketController.getMessageObject = function(msg){
+		msg = "var obj = "+msg;
+		eval(msg);
+		return obj;
+	}
+
+	socketController.message = function(msg, type){
+		if(type == 1){
+			msg = socketController.getMessageObject(msg);
+			msg = msg.text;
+			msg = '<p class="message">Received: ' + msg + '</p>';
+		}
+		$('#chatLog').append(msg);
+	}
+
+
+
+
+
+	Interface = {};
+	Interface.click = function(e, offsetLeft, offsetTop){
+		var x = e.pageX - offsetLeft;
+		var y = e.pageY - offsetTop;
+
+		if(socketController.isConnected){
+			$('#chatLog').append(x +', '+ y + '<br/>');
+			socketController.send('{"action":"move", "x":'+x+', "y":'+y+'}');
+		}else{
+			socketController.message('<p> not connected? </p>');
+		}
+
+	}
+	Interface.keyboard = function(event){
+	  if (event.keyCode == '13') {
+		 send();
+	   }
+
+	}

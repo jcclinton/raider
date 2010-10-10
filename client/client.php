@@ -11,24 +11,7 @@ $(document).ready(function() {
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
 	}else{
 		//The user has WebSockets
-
-		function loadjscssfile(filename, filetype){
-			if (filetype=="js"){ //if filename is a external JavaScript file
-				var fileref=document.createElement('script')
-				fileref.setAttribute("type","text/javascript")
-				fileref.setAttribute("src", filename)
-			}
-			if (typeof fileref!="undefined")
-				document.getElementsByTagName("head")[0].appendChild(fileref)
-		}
-
-		//loadjscssfile("socket.js", "js") //dynamically load and add this .js file
-
-		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
-
-		//draw();
-		socketController.connect();
-
+		Init.run();
 	}
 });
 </script>
