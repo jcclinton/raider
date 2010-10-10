@@ -6,7 +6,11 @@
 
 		socketController.connect();
 
-		$('#canvas').click(function(e) {
+		canvas_element = $('#canvas');
+
+		World.init(canvas_element);
+
+		canvas_element.click(function(e) {
 				var x = this.offsetLeft;
 				var y = this.offsetTop;
 			Interface.click(e, x, y);
@@ -21,9 +25,19 @@
 			Interface.keyboard(event);
 		});
 
-		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:200px; left:200px;" />');
+		Unit.init();
 
 	}
+
+	World = {}
+	World.height = 800;
+	World.width = 600;
+	World.init = function(canvas){
+		World.canvas = canvas;
+		canvas.css('height', World.height);
+		canvas.css('width', World.width);
+	}
+	//World.background = {type:"color",}
 
 
 
@@ -59,18 +73,8 @@
 	socketController.receive = function(msg){
 		//socketController.message(msg.data, 1);
 		msg = socketController.getMessageObject(msg.data);
-		var speed;
-		if(msg.text == 'moving'){
-			speed = 10;
-			$('#sprite').animate({
-				top: msg.y,
-				left: msg.x
-			}, speed);
-			$('#chatLog').append('<p>moving to: ' + msg.x + ', '+  msg.y + '</p>');
-		}else{
-			msg = msg.text;
-			socketController.message('<p class="event">guh?</p>');
-		}
+		msg = msg.text;
+		socketController.message('<p class="event">received: '+msg+'</p>');
 	}
 
 	socketController.send = function(msg){
@@ -103,19 +107,13 @@
 
 
 
-
-
 	Interface = {};
 	Interface.click = function(e, offsetLeft, offsetTop){
 		var x = e.pageX - offsetLeft;
 		var y = e.pageY - offsetTop;
 
-		if(socketController.isConnected){
-			$('#chatLog').append(x +', '+ y + '<br/>');
-			socketController.send('{"action":"move", "x":'+x+', "y":'+y+'}');
-		}else{
-			socketController.message('<p> not connected? </p>');
-		}
+		Unit.move(x,y);
+		socketController.send('{"action":"move", "x":'+x+', "y":'+y+'}');
 
 	}
 	Interface.keyboard = function(event){
@@ -123,4 +121,32 @@
 		 send();
 	   }
 
+	}
+
+
+
+	Unit = {}
+
+	Unit.init = function(){
+		var top = '200';
+		var left = '100';
+		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:300px left:100px;" />');
+		Unit.speed = 1000;
+	}
+
+	Unit.move = function(x, y){
+		$('#sprite').animate({
+			top: y,
+			left: x
+		},
+		Unit.speed,
+		function(){
+			Unit.hasArrived(x, y);
+		});
+		socketController.message('<p>moving to: ' + x + ', '+  y + '</p>');
+	}
+
+	Unit.hasArrived = function(x, y){
+		socketController.message('<p>arrived at: ' + x + ', '+  y + '</p>');
+		socketController.send('{"action":"arrived", "x":'+x+', "y":'+y+'}');
 	}

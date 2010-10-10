@@ -20,7 +20,7 @@ $(document).ready(function() {
 body{font-family:Arial, Helvetica, sans-serif;}
 #container{
 	border:5px solid grey;
-	width:800px;
+	width:300px;
 	margin:0 auto;
 	padding:10px;
 }
@@ -37,29 +37,28 @@ body{font-family:Arial, Helvetica, sans-serif;}
 .bad{
 	color: red;
 }
+
+.fl{
+	float:left;
+}
 </style>
 <title>WebSockets Client</title>
 
 </head>
 <body>
 	<!--canvas id="canvas" width="400" height="400" style="outline: 1px solid black"></canvas-->
-	<div id="canvas" style="outline:1px solid black; height:400px; width:400px; position:relative;"></div>
-  <div id="wrapper">
+	<div id="canvas" class="fl" style="outline:1px solid black; height:400px; width:400px; position:relative;"></div>
 
-  	<div id="container">
+  	<div id="container" class="fl">
 
     	<h1>WebSockets Client</h1>
 
         <div id="chatLog">
 
         </div>
-        <p id="examples">e.g. try 'hi', 'name', 'age', 'today'</p>
-
-    	<input id="text" type="text" />
         <button id="disconnect">Disconnect</button>
 
 	</div>
-
-  </div>
+	<div style="clear:both;"></div>
 </body>
-</html>​
+</html>

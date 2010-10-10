@@ -84,6 +84,7 @@ class GameLoop{
 			//$msg = array('response' => 'sucess', 'text' => 'moving', 'x');
 			$msg = $this->__unit->getResponse();
 			$this->_webSocket->sendResponse($msg);
+			self::setSendFlag(false);
 		}
 	}
 

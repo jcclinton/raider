@@ -9,7 +9,7 @@ class Unit extends User
 	public function __construct(&$websocket)
 	{
 		parent::__construct();
-		
+
 		$this->websocket = $websocket;
 		$this->init();
 	}
@@ -30,20 +30,29 @@ class Unit extends User
 	}
 
 	public function update($dt, $action = null){
-		$data = json_decode($action, true);
 		if($action){
-			if($data['action'] == 'move' && isset($data['x']) && isset($data['y'])){
+			$data = json_decode($action, true);
+			if(method_exists($this, $data['action'])){
+				$this->$data['action']($data['x'], $data['y']);
+				GameLoop::setSendFlag(true);
+			}else{
+				$this->console('method: '.$data['action'].' does not exist');
+			}
+
+
+
+			/*if($data['action'] == 'move' && isset($data['x']) && isset($data['y'])){
 				$this->unit['dx'] = $data['x'];
 				$this->unit['dy'] = $data['y'];
 				$this->console('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$this->unit['dx'] . ', '.$this->unit['dy']);
-			}
+			}*/
 		}
 
-		$this->updatePosition($dt);
+		//$this->updatePosition($dt);
 	}
 
 	public function getResponse(){
-		$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
+		$msg = array('response' => 'sucess', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy']);
 		return $msg;
 	}
 
@@ -85,10 +94,31 @@ class Unit extends User
 
 
 		if($this->unit['status'] == 'moving'){
-			GameLoop::setSendFlag(true);
+			//GameLoop::setSendFlag(true);
 		}else{
 		GameLoop::setSendFlag(false);
 		}
+	}
+
+
+
+
+
+
+	protected function move($x, $y){
+		$this->unit['dx'] = $x;
+		$this->unit['dy'] = $y;
+		$this->unit['status'] = 'moving';
+		$this->console('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$this->unit['dx'] . ', '.$this->unit['dy']);
+	}
+
+	protected function arrived($x, $y){
+		$this->unit['x'] = $x;
+		$this->unit['y'] = $y;
+		$this->unit['dx'] = null;
+		$this->unit['dy'] = null;
+		$this->unit['status'] = 'stopped';
+		$this->console('arrived at: '.$this->unit['x'].','.$this->unit['y']);
 	}
 }
 
