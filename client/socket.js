@@ -1,7 +1,7 @@
 
 
 
-	Init = {}
+	Init = {};
 	Init.run = function(){
 
 		socketController.connect();
@@ -27,15 +27,27 @@
 
 		Unit.init();
 
-	}
+	};
 
 	World = {}
-	World.height = 800;
-	World.width = 600;
 	World.init = function(canvas){
+		World.height = 800;
+		World.width = 600;
 		World.canvas = canvas;
 		canvas.css('height', World.height);
 		canvas.css('width', World.width);
+
+		
+		function disableSelection(){
+			var target = document.body;
+			if (typeof target.onselectstart!="undefined") //IE route
+				target.onselectstart=function(){return false}
+			else if (typeof target.style.MozUserSelect!="undefined") //Firefox route
+				target.style.MozUserSelect="none"
+			else //All other route (ie: Opera)
+				target.onmousedown=function(){return false}
+			target.style.cursor = "default"
+		}
 	}
 	//World.background = {type:"color",}
 
@@ -128,25 +140,50 @@
 	Unit = {}
 
 	Unit.init = function(){
-		var top = '200';
-		var left = '100';
-		$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:300px left:100px;" />');
-		Unit.speed = 1000;
+		var top = 200;
+		var left = 100;
+		Unit.x = left;
+		Unit.y = top;
+		Unit.name = 'sprite';
+		Unit.element = $('#sprite');
+		Unit.moving = 0;
+		Unit.speed = 100;
+
+		World.canvas.append('<img src="images/zoqfot.big.12.png" id = "'+Unit.name+'" style="position:absolute; top:'+top+'px; left:'+left+'px;" />');
 	}
 
 	Unit.move = function(x, y){
+
+		var distance = Math.sqrt( Math.pow(x - Unit.x, 2) , Math.pow(y - Unit.y, 2)  );
+		if(Unit.moving == 1){
+			Unit.stop();
+		}
+		Unit.moving = 1;
 		$('#sprite').animate({
 			top: y,
 			left: x
 		},
-		Unit.speed,
+		1000*(distance/Unit.speed),
+		'linear',
 		function(){
 			Unit.hasArrived(x, y);
 		});
-		socketController.message('<p>moving to: ' + x + ', '+  y + '</p>');
+
+		socketController.message('<p>moving to: ' + x + ', '+  y + ' which is distance: ' + distance +' and will take ' + distance/Unit.speed + ' seconds while moving at '+Unit.speed+'</p>');
+	}
+
+	Unit.stop = function(){
+		$('#sprite').stop(true);
+		var p = $('#sprite').position();
+		Unit.x = p.left;
+		Unit.y = p.top;
+		Unit.moving = 0;
 	}
 
 	Unit.hasArrived = function(x, y){
+		Unit.x = x;
+		Unit.y = y;
 		socketController.message('<p>arrived at: ' + x + ', '+  y + '</p>');
 		socketController.send('{"action":"arrived", "x":'+x+', "y":'+y+'}');
+		Unit.moving = 0;
 	}

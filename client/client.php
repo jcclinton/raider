@@ -49,6 +49,8 @@ body{font-family:Arial, Helvetica, sans-serif;}
 	<!--canvas id="canvas" width="400" height="400" style="outline: 1px solid black"></canvas-->
 	<div id="canvas" class="fl" style="outline:1px solid black; height:400px; width:400px; position:relative;"></div>
 
+	<div id="wrapper">
+
   	<div id="container" class="fl">
 
     	<h1>WebSockets Client</h1>
@@ -60,5 +62,6 @@ body{font-family:Arial, Helvetica, sans-serif;}
 
 	</div>
 	<div style="clear:both;"></div>
+	<div>
 </body>
 </html>

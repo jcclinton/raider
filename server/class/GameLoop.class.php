@@ -10,6 +10,8 @@ class GameLoop{
 
 	protected $__unit = null;
 
+	protected $_users = array();
+
 	const SLEEP_TIME = 10000;
 	const MIN_CYCLE_TIME = 0.1;
 
