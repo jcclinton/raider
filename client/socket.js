@@ -1,6 +1,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
 	Init = {};
 	Init.run = function(){
 
@@ -37,7 +52,7 @@
 		canvas.css('height', World.height);
 		canvas.css('width', World.width);
 
-		
+
 		function disableSelection(){
 			var target = document.body;
 			if (typeof target.onselectstart!="undefined") //IE route
@@ -186,4 +201,4 @@
 		socketController.message('<p>arrived at: ' + x + ', '+  y + '</p>');
 		socketController.send('{"action":"arrived", "x":'+x+', "y":'+y+'}');
 		Unit.moving = 0;
-	}
+	}*/
