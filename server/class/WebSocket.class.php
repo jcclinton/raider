@@ -54,7 +54,7 @@ class WebSocket extends socket
 					$this->clients[$socket_index] = new stdClass;
 					$this->clients[$socket_index]->socket_id = $client;
 
-					$this->console($client . ' CONNECTED!');
+					$this->console($client . ' CONNECTED with id:' . $socket_index . '!');
 				}
 			}
 			# client socket has sent data
@@ -75,6 +75,9 @@ class WebSocket extends socket
 					if( !isset($this->handshakes[$socket_index]) )
 					{
 						$this->doHandshake($buffer,$socket,$socket_index);
+
+						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received');
+						$this->sendResponse($msg, $socket_index);
 						//$this->init();
 					}
 					# handshake already done, read data
@@ -96,14 +99,22 @@ class WebSocket extends socket
 	}
 
 
-	public function sendResponse($msg){
+	public function sendResponse($msg, $index = null){
 		//$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
 		$retval = json_encode($msg);
-		$this->console('Sending: '.$retval);
 
-		foreach($this->allsockets as $socket){
+		if($index){
+			$this->console('Sending: '.$retval . ' to index: ' . $index);
+			$socket = $this->allsockets[$index];
 			if( $socket!=$this->master ){
 				$this->send($socket, $retval);
+			}
+		}else{
+			$this->console('Sending: '.$retval);
+			foreach($this->allsockets as $socket){
+				if( $socket!=$this->master ){
+					$this->send($socket, $retval);
+				}
 			}
 		}
 	}

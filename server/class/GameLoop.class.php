@@ -20,7 +20,7 @@ class GameLoop{
 		$this->init();
 		while(true){
 			if(self::$_reset){
-				$this->init();
+				//$this->init();
 			}
 			$time_start = microtime(true);
 			$this->_dt = $time_start - $time_end;

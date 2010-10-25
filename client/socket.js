@@ -1,6 +1,181 @@
 
 
+		var UnitList = Backbone.Collection.extend({
+		});
+		var list = new UnitList;
 
+
+
+		var Unit = Backbone.Model.extend({
+
+			initialize: function(attributes) {
+				this.set({x: attributes.x, y: attributes.y, id: attributes.id});
+				$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
+				console.log('creating model');
+				list.add(this);
+			},
+
+			init: function(data){
+				var new_id = data.id;
+				this.set({id: new_id});
+				console.log('initializing model to id: '+this.get('id'));
+			},
+
+			move: function(){
+				console.log('moving model');
+			}
+
+		});
+
+
+
+
+
+
+
+
+
+
+
+
+		var UnitView = Backbone.View.extend({
+		  initialize: function() {
+		  	console.log('view init');
+		    //_.bindAll(this, "render");
+		  	this.handleEvents();
+		  },
+
+		  events: {
+		    "click":          "move"
+		  },
+
+		  render: function() {
+			console.log('render');
+		  	//alert('hi');
+		  	//this.handleEvents();
+
+		  	return this;
+		  },
+
+		  move: function(e){
+			console.log('move');
+
+			var dx = e.pageX - 8;
+			var dy = e.pageX - 8;
+
+			var distance = Math.sqrt( Math.pow(dx - this.model.get('x'), 2) + Math.pow(dy - this.model.get('y'), 2)  );
+
+			var time = 5 * distance;
+			//time = 1000;
+
+			//		console.log(distance + ' ' + dy + ' ' + this.model.get('y'));
+			this.model.set({x:dx, y:dy});
+			this.model.save();
+
+			$('#sprite').animate({
+				top: this.model.get('y'),
+				left: this.model.get('x')
+			},
+			time,
+			'linear');
+		  }
+
+		});
+
+
+		Backbone.sync = function(method, model, success, error) {
+			if(method == 'create'){
+				var msg = '{"action":"create"}';
+			}else{
+				var x = model.get('x');
+				var y = model.get('y');
+				var msg = '{"action":"move", "x":'+x+', "y":'+y+'}';
+			}
+			socketController.send(msg);
+		}
+
+
+
+
+	socketController = {
+		connect : function(){
+				var host = "ws://localhost:8000/php2d/server/startDaemon.php";
+
+				try{
+					this.socket = new WebSocket(host);
+					this.message('<p class="event">Socket Status: '+this.socket.readyState+'</p>');
+					this.isConnected = true;
+
+					//assign out relevant functions
+					this.socket.onopen = this.open;
+					this.socket.onmessage = this.receive;
+					this.socket.onclose = this.close;
+
+				} catch(exception){
+					this.message('<p>Error'+exception+'</p>');
+				}
+		},
+
+		open : function(){
+			this.isConnected = true;
+			this.message('<p class="event">Socket Status: '+this.socket.readyState+' (open)'+'</p>');
+		},
+
+		close : function(){
+			this.isConnected = false;
+			this.message('<p class="event bad">Socket Status: '+this.socket.readyState+' (Closed)'+'</p>');
+		},
+
+		receive : function(msg){
+			//this.message(msg.data, 1);
+			msg = this.getMessageObject(msg.data);
+			var text = msg.text;
+
+			if(msg.command == 'init'){
+				var u = new Unit({x: 200,y: 100, id: msg.id});
+				new UnitView({el: $('#canvas'), model: u});
+			}
+
+			this.message('<p class="event">received: '+text+'</p>');
+		},
+
+		send : function(msg){
+			if(this.isConnected){
+				try{
+					this.socket.send(msg);
+					this.message('<p class="event">Sent: '+msg+'</p>')
+				} catch(exception){
+					console.log(exception);
+					this.message('<p class="warning">doh!</p>');
+				}
+			}else{
+				this.message('<p class="event">Socket not connected!</p>')
+			}
+		},
+
+		getMessageObject : function(msg){
+			msg = "var obj = "+msg;
+			eval(msg);
+			return obj;
+		},
+
+		message : function(msg, type){
+			if(type == 1){
+				msg = this.getMessageObject(msg);
+				msg = msg.text;
+				msg = '<p class="message">Received: ' + msg + '</p>';
+			}
+			$('#chatLog').append(msg);
+		}
+	}
+	_.bindAll(socketController);
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+	socketController.connect();
 
 
 

@@ -2,7 +2,6 @@
 <html>
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script src="socket.js"></script>
 <script src="underscore.js"></script>
 <script src="backbone.js"></script>
 <script type="text/javascript">
@@ -13,52 +12,6 @@ $(document).ready(function() {
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
 	}else{
 		//The user has WebSockets
-		var Unit = Backbone.Model.extend({
-
-			initialize: function(attributes) {
-				this.x = attributes.x;
-				this.y = attributes.x;
-			},
-
-		});
-
-
-		var UnitView = Backbone.View.extend({
-
-		  tagName: "img",
-
-		  //className: "document-row",
-
-		  events: {
-		    "click #canvas":          "move",
-		  },
-
-		  initialize: function(attributes) {
-			this.model = attributes.model;
-		    _.bindAll(this, "render");
-			$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:'+this.model.y+'px; left:'+this.model.x+'px;" />');
-		  },
-
-		  render: function() {
-		  	alert('hi');
-		  	this.handleEvents();
-		  	return this;
-		  },
-
-		  move: function(){
-			$('#sprite').animate({
-				top: 10,
-				left: 10
-			},
-			1000,
-			'linear');
-		  }
-
-		});
-
-
-		var unit = new Unit({x: 200,y: 100});
-		var doc = new UnitView({model: unit});
 	}
 });
 </script>
@@ -111,4 +64,5 @@ body{font-family:Arial, Helvetica, sans-serif;}
 	<div style="clear:both;"></div>
 	<div>
 </body>
+<script src="socket.js"></script>
 </html>

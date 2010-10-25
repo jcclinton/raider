@@ -52,7 +52,7 @@ class Unit extends User
 	}
 
 	public function getResponse(){
-		$msg = array('response' => 'sucess', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy']);
+		$msg = array('response' => 'sucess', 'command'=>'move', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy']);
 		return $msg;
 	}
 
