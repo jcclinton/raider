@@ -43,7 +43,7 @@ class GameLoop{
 	*/
 
 	private function init($new_ws = true){
-			$this->_webSocket = new WebSocket();
+		$this->_webSocket = new WebSocket();
 
 		$this->__unit = new Unit($this->_webSocket);
 		self::$_reset = false;
@@ -70,10 +70,13 @@ class GameLoop{
 	*/
 	private function update(){
 		if(!empty($this->_queue)){
-			$this->processQueue();
-		}else{
-				$this->__unit->update($this->_dt);
+			foreach($this->_queue as $action_array){
+				$action = $action_array['action'];
+				$id = $action_array['id'];
+				$this->__unit->update($this->_dt, $action, $id);
 			}
+			$this->_queue = array();
+		}
 	}
 
 	/**
@@ -97,15 +100,6 @@ class GameLoop{
 
 	protected static function shouldSend(){
 		return self::$_sendFlag;
-	}
-
-	protected function processQueue(){
-		if(!empty($this->_queue)){
-			foreach($this->_queue as $action){
-				$this->__unit->update($this->_dt, $action);
-			}
-			$this->_queue = array();
-		}
 	}
 }
 ?>

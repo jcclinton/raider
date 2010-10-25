@@ -29,11 +29,12 @@ class Unit extends User
 		$this->websocket->console($msg);
 	}
 
-	public function update($dt, $action = null){
-		if($action){
+	public function update($dt, $action = null, $id = null){
+		if($action && $id){
 			$data = json_decode($action, true);
 			if(method_exists($this, $data['action'])){
 				$this->$data['action']($data['x'], $data['y']);
+				$this->unit['id'] = $id;
 				GameLoop::setSendFlag(true);
 			}else{
 				$this->console('method: '.$data['action'].' does not exist');
@@ -52,7 +53,7 @@ class Unit extends User
 	}
 
 	public function getResponse(){
-		$msg = array('response' => 'sucess', 'command'=>'move', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy']);
+		$msg = array('response' => 'sucess', 'command'=>'move', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'id' => $this->unit['id']);
 		return $msg;
 	}
 

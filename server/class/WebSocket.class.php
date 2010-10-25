@@ -78,6 +78,8 @@ class WebSocket extends socket
 
 						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received');
 						$this->sendResponse($msg, $socket_index);
+						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'create', 'text' => 'create new');
+						$this->sendResponse($msg);
 						//$this->init();
 					}
 					# handshake already done, read data
@@ -85,7 +87,7 @@ class WebSocket extends socket
 					{
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
 
-						$queue[] = $action;
+						$queue[] = array('id'=> $socket_index, 'action'=>$action);
 						$this->console('receiving: ' . $action);
 
 						//$msg = socketWebSocketTrigger::run($action);
@@ -104,13 +106,11 @@ class WebSocket extends socket
 		$retval = json_encode($msg);
 
 		if($index){
-			$this->console('Sending: '.$retval . ' to index: ' . $index);
 			$socket = $this->allsockets[$index];
 			if( $socket!=$this->master ){
 				$this->send($socket, $retval);
 			}
 		}else{
-			$this->console('Sending: '.$retval);
 			foreach($this->allsockets as $socket){
 				if( $socket!=$this->master ){
 					$this->send($socket, $retval);

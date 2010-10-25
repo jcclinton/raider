@@ -1,18 +1,24 @@
 
 
-		var UnitList = Backbone.Collection.extend({
-		});
-		var list = new UnitList;
+		UnitList = Backbone.Collection.extend({});
+		list = new UnitList();
 
 
 
-		var Unit = Backbone.Model.extend({
+		Unit = Backbone.Model.extend({
 
 			initialize: function(attributes) {
-				this.set({x: attributes.x, y: attributes.y, id: attributes.id});
-				$('#canvas').append('<img src="images/zoqfot.big.12.png" id = "sprite" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
+				this.set(attributes);
+				var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
+				var name = 'sprite'+this.get('id');
+				$('#canvas').append('<img src="images/'+img+'" id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
 				console.log('creating model');
 				list.add(this);
+				new UnitView({model: this, el: $('#'+name)});
+			},
+
+			isMe: function(){
+				return this.get('current');
 			},
 
 			init: function(data){
@@ -41,8 +47,14 @@
 		var UnitView = Backbone.View.extend({
 		  initialize: function() {
 		  	console.log('view init');
-		    //_.bindAll(this, "render");
-		  	this.handleEvents();
+		  	if(this.model.isMe()){
+		  		this.createEvents();
+		  	}else{
+		  		var temp = this;
+		  		this.model.bind('change:dy', function(model, dx){
+			  		temp.render();
+			  	});
+		  	}
 		  },
 
 		  events: {
@@ -51,17 +63,59 @@
 
 		  render: function() {
 			console.log('render');
-		  	//alert('hi');
-		  	//this.handleEvents();
+
+			var dx = this.model.get('dx');
+			var dy = this.model.get('dy');
+					console.log('prerendering to:'+this.model.get('dx') +', ' + this.model.get('dy'));
+
+			var distance = Math.sqrt( Math.pow(dx - this.model.get('x'), 2) + Math.pow(dy - this.model.get('y'), 2)  );
+
+			var time = 5 * distance;
+			//time = 1000;
+
+			//		console.log(distance + ' ' + dy + ' ' + this.model.get('y'));
+			this.model.set({x:dx, y:dy}, {silent: true});
+			//this.model.save();
+
+			this.el.stop();
+					console.log('rendering to:'+this.model.get('x') +', ' + this.model.get('y'));
+
+			this.el.animate({
+				top: this.model.get('y'),
+				left: this.model.get('x')
+			},
+			time,
+			'linear');
 
 		  	return this;
 		  },
 
+			createEvents : function(events) {
+			  // Cached regex to split keys for `handleEvents`.
+			  var eventSplitter = /^(\w+)\s*(.*)$/;
+			  //$(this.el).unbind();
+			  if (!(events || (events = this.events))) return this;
+			  for (var key in events) {
+			    var methodName = events[key];
+			    var match = key.match(eventSplitter);
+			    var eventName = match[1], selector = match[2];
+			    var method = _.bind(this[methodName], this);
+			    if (selector === '' || eventName == 'change') {
+			      $('#canvas').bind(eventName, method);
+			    } else {
+			      $('#canvas').delegate(selector, eventName, method);
+			    }
+			  }
+			  return this;
+			},
+
 		  move: function(e){
 			console.log('move');
 
+			//var dx = e.offsetX - 8;
+			//var dy = e.offsety - 8;
 			var dx = e.pageX - 8;
-			var dy = e.pageX - 8;
+			var dy = e.pageY - 8;
 
 			var distance = Math.sqrt( Math.pow(dx - this.model.get('x'), 2) + Math.pow(dy - this.model.get('y'), 2)  );
 
@@ -72,7 +126,9 @@
 			this.model.set({x:dx, y:dy});
 			this.model.save();
 
-			$('#sprite').animate({
+			this.el.stop();
+
+			this.el.animate({
 				top: this.model.get('y'),
 				left: this.model.get('x')
 			},
@@ -81,6 +137,17 @@
 		  }
 
 		});
+
+
+
+
+
+
+
+
+
+
+
 
 
 		Backbone.sync = function(method, model, success, error) {
@@ -93,6 +160,22 @@
 			}
 			socketController.send(msg);
 		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -131,9 +214,25 @@
 			msg = this.getMessageObject(msg.data);
 			var text = msg.text;
 
-			if(msg.command == 'init'){
-				var u = new Unit({x: 200,y: 100, id: msg.id});
-				new UnitView({el: $('#canvas'), model: u});
+			if(msg.command == 'init' || msg.command == 'create'){
+				var exists = list.detect(function(u){
+					return (u.get('id') == msg.id)?true:false;
+				});
+
+				if(!exists){
+					var obj = {x: 200,y: 100, id: msg.id, dx: 0, dy: 0};
+					obj.current = (msg.command == 'init')?1:0;
+					var u = new Unit(obj);
+				}
+			}else if(msg.command == 'move'){
+				var e = list.detect(function(u){
+					return u.get('id') == msg.id;
+				});
+
+				if(e && e.isMe() == 0){
+					e.set({dx: msg.x, dy: msg.y});
+					console.log('moving to:'+msg.x +', ' + msg.y);
+				}
 			}
 
 			this.message('<p class="event">received: '+text+'</p>');
@@ -176,6 +275,7 @@
 
 
 	socketController.connect();
+	$('#disconnect').bind('click', function(){socketController.close();});
 
 
 
