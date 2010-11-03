@@ -27,8 +27,11 @@
 				console.log('initializing model to id: '+this.get('id'));
 			},
 
-			move: function(){
+			moveModel: function(msg){
 				console.log('moving model');
+
+				this.set({dx: msg.dx, dy: msg.dy}, {silent: true})
+				this.trigger('moveUnit');
 			}
 
 		});
@@ -47,13 +50,15 @@
 		var UnitView = Backbone.View.extend({
 		  initialize: function() {
 		  	console.log('view init');
+
+  			_.bindAll(this, 'render', 'move', 'remove', 'createEvents');
+		  	this.model.view = this;
 		  	if(this.model.isMe()){
 		  		this.createEvents();
 		  	}else{
-		  		var temp = this;
-		  		this.model.bind('change:dy', function(model, dx){
-			  		temp.render();
-			  	});
+			  	this.model.bind('moveUnit', this.render);
+			  	list.bind('remove', this.remove);
+			  	//this.handleEvents();
 		  	}
 		  },
 
@@ -66,7 +71,6 @@
 
 			var dx = this.model.get('dx');
 			var dy = this.model.get('dy');
-					console.log('prerendering to:'+this.model.get('dx') +', ' + this.model.get('dy'));
 
 			var distance = Math.sqrt( Math.pow(dx - this.model.get('x'), 2) + Math.pow(dy - this.model.get('y'), 2)  );
 
@@ -134,6 +138,12 @@
 			},
 			time,
 			'linear');
+		  },
+
+		  remove: function(){
+		  	console.log('removing');
+		  	this.el.remove();
+		  	this.model.destroy();
 		  }
 
 		});
@@ -196,6 +206,7 @@
 
 				} catch(exception){
 					this.message('<p>Error'+exception+'</p>');
+					this.isConnected = false;
 				}
 		},
 
@@ -205,6 +216,7 @@
 		},
 
 		close : function(){
+			this.socket.close();
 			this.isConnected = false;
 			this.message('<p class="event bad">Socket Status: '+this.socket.readyState+' (Closed)'+'</p>');
 		},
@@ -213,25 +225,23 @@
 			//this.message(msg.data, 1);
 			msg = this.getMessageObject(msg.data);
 			var text = msg.text;
+			text = text + ' id:' + msg.id;
 
+			var e = list.get(msg.id);
 			if(msg.command == 'init' || msg.command == 'create'){
-				var exists = list.detect(function(u){
-					return (u.get('id') == msg.id)?true:false;
-				});
-
-				if(!exists){
+				if(!e){
 					var obj = {x: 200,y: 100, id: msg.id, dx: 0, dy: 0};
 					obj.current = (msg.command == 'init')?1:0;
 					var u = new Unit(obj);
 				}
 			}else if(msg.command == 'move'){
-				var e = list.detect(function(u){
-					return u.get('id') == msg.id;
-				});
-
 				if(e && e.isMe() == 0){
-					e.set({dx: msg.x, dy: msg.y});
-					console.log('moving to:'+msg.x +', ' + msg.y);
+					e.moveModel({dx: msg.x, dy: msg.y});
+				}
+			}else if(msg.command == 'close'){
+				if(e){
+					console.log('CLOSING id: ' + e.id);
+					list.remove(e);
 				}
 			}
 

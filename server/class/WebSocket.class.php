@@ -66,6 +66,16 @@ class WebSocket extends socket
 				$bytes = @socket_recv($socket,$buffer,2048,0);
 				if( $bytes === 0 )
 				{
+					foreach( $this->allsockets as $socket_temp ){
+						# master socket changed means there is a new socket request
+						if( $socket_temp != $this->master && $socket_temp != $socket){
+							if($socket_index){
+								$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'close', 'text' => 'user dropped');
+								$this->sendResponse($msg);
+							}
+						}
+					}
+
 					$this->disconnected($socket);
 				}
 				# there is data to be read
@@ -80,7 +90,18 @@ class WebSocket extends socket
 						$this->sendResponse($msg, $socket_index);
 						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'create', 'text' => 'create new');
 						$this->sendResponse($msg);
-						//$this->init();
+
+
+						foreach( $this->allsockets as $new_socket_index => $socket_temp ){
+							# master socket changed means there is a new socket request
+							if( $socket_temp != $this->master && $socket_temp != $socket){
+								//$new_socket_index = array_search($socket_temp, $this->allsockets);
+								if($new_socket_index){
+									$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects');
+									$this->sendResponse($msg);
+								}
+							}
+						}
 					}
 					# handshake already done, read data
 					else
@@ -216,8 +237,7 @@ class WebSocket extends socket
 		}
 
 		socket_close($socket);
-		$this->console($socket." disconnected!");
-		GameLoop::reset();
+		$this->console($socket." disconnected! (index: {$index})");
 	}
 
 	/**
