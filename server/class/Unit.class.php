@@ -14,6 +14,7 @@ class Unit
 		$unit['dx'] = null;
 		$unit['dy'] = null;
 		$unit['status'] = 'stopped';
+		$unit['command'] = 'stop';
 		$unit['id'] = $id;
 		$this->unit = $unit;
 	}
@@ -33,7 +34,7 @@ class Unit
 	}
 
 	public function getResponse(){
-		$msg = array('response' => 'sucess', 'command'=>'move', 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'id' => $this->unit['id']);
+		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'id' => $this->unit['id']);
 		return $msg;
 	}
 
@@ -90,6 +91,7 @@ class Unit
 		$this->unit['dx'] = $x;
 		$this->unit['dy'] = $y;
 		$this->unit['status'] = 'moving';
+		$this->unit['command'] = 'move';
 		console::log('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$this->unit['dx'] . ', '.$this->unit['dy']);
 	}
 
@@ -99,6 +101,7 @@ class Unit
 		$this->unit['dx'] = null;
 		$this->unit['dy'] = null;
 		$this->unit['status'] = 'stopped';
+		$this->unit['command'] = 'stop';
 		console::log('arrived at: '.$this->unit['x'].','.$this->unit['y']);
 	}
 }

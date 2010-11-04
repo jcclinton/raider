@@ -62,7 +62,11 @@ class GameLoop extends WebSocket{
 				$action = $action_array['action'];
 				$id = $action_array['id'];
 				$unit = Client::getUnit($id);
-				$unit->update($this->_dt, $action);
+
+				//$unit will be null if the client disconnects
+				if($unit instanceof Unit){
+					$unit->update($this->_dt, $action);
+				}
 
 				if(self::shouldSend()){
 					$msg = $unit->getResponse();

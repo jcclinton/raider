@@ -17,6 +17,10 @@ class Client extends User
 		self::$units[$id] = new Unit($id);
     }
 
+	public function __destruct() {
+		unset(self::$units[$this->id]);
+	}
+
     public static function getUnit($id){
     	return self::$units[$id];
     }

@@ -58,7 +58,6 @@ class WebSocket extends socket
 					# i want to avoid the often array_search calls
 					$socket_index = array_search($client,$this->allsockets);
 					$this->clients[$socket_index] = new Client($client, $socket_index);
-					$this->clients[$socket_index]->socket_id = $client;
 
 					console::log($client . ' CONNECTED with id:' . $socket_index . '!');
 				}
