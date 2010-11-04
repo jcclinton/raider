@@ -15,7 +15,6 @@ class WebSocket extends socket
 	public function __construct()
 	{
 		parent::__construct();
-
 	}
 
 
@@ -24,11 +23,11 @@ class WebSocket extends socket
 		$queue = array();
 
 
-		/*$this->console('*********************************');
+		/*console::log('*********************************');
 		foreach($this->clients as $key => $sock){
-			$this->console('id: ' . $key . ' for sock: ' . $sock->socket_id);
+			console::log('id: ' . $key . ' for sock: ' . $sock->socket_id);
 		}
-		$this->console('*********************************');*/
+		console::log('*********************************');*/
 
 		# because socket_select gets the sockets it should watch from $changed_sockets
 		# and writes the changed sockets to that array we have to copy the allsocket array
@@ -47,7 +46,7 @@ class WebSocket extends socket
 				# if accepting new socket fails
 				if( ($client=socket_accept($this->master)) < 0 )
 				{
-					$this->console('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
+					console::log('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
 					continue;
 				}
 				# if it is successful push the client to the allsockets array
@@ -58,10 +57,10 @@ class WebSocket extends socket
 					# using array key from allsockets array, is that ok?
 					# i want to avoid the often array_search calls
 					$socket_index = array_search($client,$this->allsockets);
-					$this->clients[$socket_index] = new stdClass;
+					$this->clients[$socket_index] = new Client($client, $socket_index);
 					$this->clients[$socket_index]->socket_id = $client;
 
-					$this->console($client . ' CONNECTED with id:' . $socket_index . '!');
+					console::log($client . ' CONNECTED with id:' . $socket_index . '!');
 				}
 			}
 			# client socket has sent data
@@ -87,6 +86,7 @@ class WebSocket extends socket
 						$this->sendResponse($msg, $socket_index);
 
 
+						//send out the existing ids to all the sockets so they are updated with all existing information
 						foreach( $this->clients as $new_socket_index => $socket_obj ){
 							# master socket changed means there is a new socket request
 							$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects', 'x' => 200, 'y' => 200);
@@ -100,7 +100,7 @@ class WebSocket extends socket
 
 						$queue[] = array('id'=> $socket_index, 'action'=>$action);
 						if($action){
-							$this->console('receiving: ' . $action);
+							console::log('receiving: ' . $action);
 						}else{
 							$this->disconnected($socket);
 						}
@@ -166,7 +166,7 @@ class WebSocket extends socket
 
 		socket_write($socket,$upgrade,strlen($upgrade));
 
-		$this->console('Done handshaking...');
+		console::log('Done handshaking...');
         return true;
     }
 
@@ -210,7 +210,7 @@ class WebSocket extends socket
 	 */
 	protected function send($client,$msg)
 	{
-		$this->console(">>>{$msg}");
+		console::log(">>>{$msg}");
 
 		parent::send($client,chr(0).$msg.chr(255));
 	}
@@ -235,7 +235,7 @@ class WebSocket extends socket
 		$this->sendResponse($msg);
 
 		socket_close($socket);
-		$this->console($socket." disconnected! (index: {$index})");
+		console::log($socket." disconnected! (index: {$index})");
 	}
 
 	/**
@@ -254,18 +254,6 @@ class WebSocket extends socket
 		$ori  = substr($req,0,strpos($req,"\r\n"));
 
 		return array($res,$host,$ori);
-	}
-
-	/**
-	 * Extends the parent console method.
-	 * For now we just set another type.
-	 *
-	 * @param string $msg
-	 * @param string $type
-	 */
-	public function console($msg,$type='WebSocket')
-	{
-		parent::console($msg,$type);
 	}
 }
 

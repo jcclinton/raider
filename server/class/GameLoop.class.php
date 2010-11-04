@@ -7,12 +7,14 @@ class GameLoop extends WebSocket{
 	protected static $_sendFlag = false;
 	protected static $_reset = false;
 
-	//protected $__unit = null;
-
-	protected $_users = array();
-
 	const SLEEP_TIME = 10000;
 	const MIN_CYCLE_TIME = 0.1;
+
+
+	public function __construct()
+	{
+		parent::__construct();
+	}
 
 	public function run(){
 		$time_end = microtime(true);
@@ -29,13 +31,6 @@ class GameLoop extends WebSocket{
 			$this->_queue = $this->getInput();
 			$this->update();
 
-			if(self::shouldSend()){
-
-				$msg = $this->__unit->getResponse();
-				$this->sendResponse($msg);
-				self::setSendFlag(false);
-			}
-
 			if($this->_dt < self::MIN_CYCLE_TIME){
 				usleep(self::SLEEP_TIME*$delay);
 			}
@@ -49,7 +44,6 @@ class GameLoop extends WebSocket{
 	*/
 
 	private function init($new_ws = true){
-		$this->__unit = new Unit();
 		self::$_reset = false;
 	}
 
@@ -67,7 +61,14 @@ class GameLoop extends WebSocket{
 			foreach($this->_queue as $action_array){
 				$action = $action_array['action'];
 				$id = $action_array['id'];
-				$this->__unit->update($this->_dt, $action, $id);
+				$unit = Client::getUnit($id);
+				$unit->update($this->_dt, $action);
+
+				if(self::shouldSend()){
+					$msg = $unit->getResponse();
+					$this->sendResponse($msg);
+					self::setSendFlag(false);
+				}
 			}
 			$this->_queue = array();
 		}

@@ -40,7 +40,7 @@ class socket
 			die("socket_create() failed, reason: ".socket_strerror($this->master));
 		}
 
-		self::console("Socket {$this->master} created.");
+		console::log("Socket {$this->master} created.");
 
 		socket_set_option($this->master,SOL_SOCKET,SO_REUSEADDR,1);
 		#socket_set_option($master,SOL_SOCKET,SO_KEEPALIVE,1);
@@ -50,28 +50,16 @@ class socket
 			die("socket_bind() failed, reason: ".socket_strerror($ret));
 		}
 
-		self::console("Socket bound to {$host}:{$port}.");
+		console::log("Socket bound to {$host}:{$port}.");
 
 		if( ($ret=socket_listen($this->master,5)) < 0 )
 		{
 			die("socket_listen() failed, reason: ".socket_strerror($ret));
 		}
 
-		self::console('Start listening on Socket.');
+		console::log('Start listening on Socket.');
 
 		$this->allsockets[] = $this->master;
-	}
-
-	/**
-	 * Log a message
-	 * @param string $msg The message
-	 * @param string $type The type of the message
-	 */
-	protected function console($msg,$type='System')
-	{
-		$msg = explode("\n",$msg);
-		foreach( $msg as $line )
-			echo date('Y-m-d H:i:s') . " {$type}: {$line}\n";
 	}
 
 	/**
