@@ -245,7 +245,7 @@
 					var lx, ly;
 					lx = msg.x;
 					ly = msg.y;
-					
+
 					var obj = {x: lx, y: ly, id: msg.id, dx: 0, dy: 0};
 					obj.current = (msg.command == 'init')?1:0;
 					var u = new Unit(obj);
@@ -302,6 +302,7 @@
 
 	socketController.connect();
 	$('#disconnect').bind('click', function(){socketController.close();});
+	$('#connect').bind('click', function(){socketController.connect();});
 
 
 

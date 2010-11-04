@@ -59,6 +59,7 @@ body{font-family:Arial, Helvetica, sans-serif;}
 
         </div>
         <button id="disconnect">Disconnect</button>
+        <button id="connect">Connect</button>
 
 	</div>
 	<div style="clear:both;"></div>
