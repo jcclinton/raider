@@ -6,7 +6,7 @@ class Unit extends User
 	private $unit = array();
 	private $websocket = null;
 
-	public function __construct(&$websocket)
+	public function __construct($websocket = null)
 	{
 		parent::__construct();
 
@@ -26,7 +26,7 @@ class Unit extends User
 	}
 
 	protected function console($msg){
-		$this->websocket->console($msg);
+		//$this->websocket->console($msg);
 	}
 
 	public function update($dt, $action = null, $id = null){

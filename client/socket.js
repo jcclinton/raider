@@ -60,6 +60,7 @@
 			  	list.bind('remove', this.remove);
 			  	//this.handleEvents();
 		  	}
+			  	list.bind('removeAll', this.removeAll);
 		  },
 
 		  events: {
@@ -144,7 +145,14 @@
 		  	console.log('removing');
 		  	this.el.remove();
 		  	this.model.destroy();
-		  }
+		  },
+
+			removeAll: function(){
+				list.each(function(e){
+					var mdl = list.get(e.id);
+					list.remove(mdl);
+				});
+			}
 
 		});
 
@@ -202,7 +210,7 @@
 					//assign out relevant functions
 					this.socket.onopen = this.open;
 					this.socket.onmessage = this.receive;
-					this.socket.onclose = this.close;
+					this.socket.onclose = this.onclose;
 
 				} catch(exception){
 					this.message('<p>Error'+exception+'</p>');
@@ -217,6 +225,10 @@
 
 		close : function(){
 			this.socket.close();
+		},
+
+		onclose : function(){
+			list.trigger('removeAll');
 			this.isConnected = false;
 			this.message('<p class="event bad">Socket Status: '+this.socket.readyState+' (Closed)'+'</p>');
 		},
@@ -230,7 +242,11 @@
 			var e = list.get(msg.id);
 			if(msg.command == 'init' || msg.command == 'create'){
 				if(!e){
-					var obj = {x: 200,y: 100, id: msg.id, dx: 0, dy: 0};
+					var lx, ly;
+					lx = msg.x;
+					ly = msg.y;
+					
+					var obj = {x: lx, y: ly, id: msg.id, dx: 0, dy: 0};
 					obj.current = (msg.command == 'init')?1:0;
 					var u = new Unit(obj);
 				}

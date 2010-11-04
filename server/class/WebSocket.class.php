@@ -23,6 +23,13 @@ class WebSocket extends socket
 
 		$queue = array();
 
+
+		/*$this->console('*********************************');
+		foreach($this->clients as $key => $sock){
+			$this->console('id: ' . $key . ' for sock: ' . $sock->socket_id);
+		}
+		$this->console('*********************************');*/
+
 		# because socket_select gets the sockets it should watch from $changed_sockets
 		# and writes the changed sockets to that array we have to copy the allsocket array
 		# to keep our connected sockets list
@@ -40,7 +47,7 @@ class WebSocket extends socket
 				# if accepting new socket fails
 				if( ($client=socket_accept($this->master)) < 0 )
 				{
-					console('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
+					$this->console('socket_accept() failed: reason: ' . socket_strerror(socket_last_error($client)));
 					continue;
 				}
 				# if it is successful push the client to the allsockets array
@@ -66,16 +73,6 @@ class WebSocket extends socket
 				$bytes = @socket_recv($socket,$buffer,2048,0);
 				if( $bytes === 0 )
 				{
-					foreach( $this->allsockets as $socket_temp ){
-						# master socket changed means there is a new socket request
-						if( $socket_temp != $this->master && $socket_temp != $socket){
-							if($socket_index){
-								$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'close', 'text' => 'user dropped');
-								$this->sendResponse($msg);
-							}
-						}
-					}
-
 					$this->disconnected($socket);
 				}
 				# there is data to be read
@@ -86,21 +83,14 @@ class WebSocket extends socket
 					{
 						$this->doHandshake($buffer,$socket,$socket_index);
 
-						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received');
+						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received', 'x' => 200, 'y' => 200);
 						$this->sendResponse($msg, $socket_index);
-						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'create', 'text' => 'create new');
-						$this->sendResponse($msg);
 
 
-						foreach( $this->allsockets as $new_socket_index => $socket_temp ){
+						foreach( $this->clients as $new_socket_index => $socket_obj ){
 							# master socket changed means there is a new socket request
-							if( $socket_temp != $this->master && $socket_temp != $socket){
-								//$new_socket_index = array_search($socket_temp, $this->allsockets);
-								if($new_socket_index){
-									$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects');
-									$this->sendResponse($msg);
-								}
-							}
+							$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects', 'x' => 200, 'y' => 200);
+							$this->sendResponse($msg);
 						}
 					}
 					# handshake already done, read data
@@ -109,7 +99,11 @@ class WebSocket extends socket
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
 
 						$queue[] = array('id'=> $socket_index, 'action'=>$action);
-						$this->console('receiving: ' . $action);
+						if($action){
+							$this->console('receiving: ' . $action);
+						}else{
+							$this->disconnected($socket);
+						}
 
 						//$msg = socketWebSocketTrigger::run($action);
 						//$this->send($socket,$msg);
@@ -228,13 +222,17 @@ class WebSocket extends socket
 	 */
 	private function disconnected($socket)
 	{
-		$index = array_search($socket, $this->allsockets);
-		if( $index >= 0 )
+		$index = array_search($socket,$this->allsockets);
+		if( $index )
 		{
 			unset($this->allsockets[$index]);
 			unset($this->clients[$index]);
 			unset($this->handshakes[$index]);
 		}
+
+		//send message to other clients that this socket has dropped
+		$msg = array('response' => 'sucess', 'id' => $index, 'command' => 'close', 'text' => 'user dropped');
+		$this->sendResponse($msg);
 
 		socket_close($socket);
 		$this->console($socket." disconnected! (index: {$index})");
