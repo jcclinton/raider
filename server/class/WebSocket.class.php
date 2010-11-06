@@ -81,15 +81,21 @@ class WebSocket extends socket
 					{
 						$this->doHandshake($buffer,$socket,$socket_index);
 
-						$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received', 'x' => 200, 'y' => 200);
-						$this->sendResponse($msg, $socket_index);
+						$new = true;
+
+						if($new){
+							$this->createNewUnit($socket_index);
+						}else{
+							$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received', 'x' => 200, 'y' => 200);
+							$this->sendResponse($msg, $socket_index);
 
 
-						//send out the existing ids to all the sockets so they are updated with all existing information
-						foreach( $this->clients as $new_socket_index => $socket_obj ){
-							# master socket changed means there is a new socket request
-							$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects', 'x' => 200, 'y' => 200);
-							$this->sendResponse($msg);
+							//send out the existing ids to all the sockets so they are updated with all existing information
+							foreach( $this->clients as $new_socket_index => $socket_obj ){
+								# master socket changed means there is a new socket request
+								$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects', 'x' => 200, 'y' => 200);
+								$this->sendResponse($msg);
+							}
 						}
 					}
 					# handshake already done, read data
@@ -133,6 +139,54 @@ class WebSocket extends socket
 		}
 	}
 
+	protected function handleClientResponse($responses){
+		if(!empty($responses)){
+			foreach($responses as $response){
+				if(!empty($response)){
+					$msg = $response['msg'];
+					if(isset($response['index'])){
+						$index = $response['index'];
+						$this->sendResponse($msg, $index);
+					}else{
+						$this->sendResponse($msg);
+					}
+				}
+			}
+		}
+	}
+
+
+	protected function createNewUnit($socket_index){
+		$client = $this->clients[$socket_index];
+		$response = $client->createNewUnit($this->clients);
+		$this->handleClientResponse($response);
+	}
+
+	/**
+	 * Disconnects a socket an delete all related data
+	 *
+	 * @param socket $socket The socket to disconnect
+	 */
+	private function disconnected($socket)
+	{
+		$index = array_search($socket,$this->allsockets);
+		if( $index )
+		{
+			$client = $this->clients[$index];
+			//$client->destroy();
+			unset($client);
+			unset($this->allsockets[$index]);
+			unset($this->clients[$index]);
+			unset($this->handshakes[$index]);
+		}
+
+		//send message to other clients that this socket has dropped
+		$msg = array('response' => 'sucess', 'id' => $index, 'command' => 'close', 'text' => 'user dropped');
+		$this->sendResponse($msg);
+
+		socket_close($socket);
+		Console::log($socket." disconnected! (index: {$index})");
+	}
 
 
 
@@ -212,29 +266,6 @@ class WebSocket extends socket
 		console::log(">>>{$msg}");
 
 		parent::send($client,chr(0).$msg.chr(255));
-	}
-
-	/**
-	 * Disconnects a socket an delete all related data
-	 *
-	 * @param socket $socket The socket to disconnect
-	 */
-	private function disconnected($socket)
-	{
-		$index = array_search($socket,$this->allsockets);
-		if( $index )
-		{
-			unset($this->allsockets[$index]);
-			unset($this->clients[$index]);
-			unset($this->handshakes[$index]);
-		}
-
-		//send message to other clients that this socket has dropped
-		$msg = array('response' => 'sucess', 'id' => $index, 'command' => 'close', 'text' => 'user dropped');
-		$this->sendResponse($msg);
-
-		socket_close($socket);
-		console::log($socket." disconnected! (index: {$index})");
 	}
 
 	/**
