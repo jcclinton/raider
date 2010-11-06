@@ -1,5 +1,5 @@
 <?php
-class GameLoop extends WebSocket{
+class gameloop extends websocket{
 
 	protected $_dt = 0;
 
@@ -61,10 +61,10 @@ class GameLoop extends WebSocket{
 			foreach($this->_queue as $action_array){
 				$action = $action_array['action'];
 				$id = $action_array['id'];
-				$unit = Client::getUnit($id);
+				$unit = client::getUnit($id);
 
 				//$unit will be null if the client disconnects
-				if($unit instanceof Unit){
+				if($unit instanceof unit){
 					$unit->update($this->_dt, $action);
 				}
 

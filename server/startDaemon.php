@@ -15,9 +15,8 @@ ob_implicit_flush(true);
 
 require 'env.inc.php';
 
-//$WebSocket = new socketWebSocket('localhost',8000);
-
-$gameLoop = new GameLoop();
+echo "before\n";
+$gameLoop = new gameloop();
 $gameLoop->run();
 
 ?>

@@ -1,6 +1,6 @@
 <?php
 
-class Unit
+class unit
 {
 
 	private $unit = array();
@@ -24,7 +24,7 @@ class Unit
 			$data = json_decode($action, true);
 			if(method_exists($this, $data['action'])){
 				$this->$data['action']($data['x'], $data['y']);
-				GameLoop::setSendFlag(true);
+				gameloop::setSendFlag(true);
 			}else{
 				console::log('*****    method: '.$data['action'].' does not exist   *****');
 			}

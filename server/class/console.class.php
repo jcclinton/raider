@@ -7,7 +7,7 @@
  * @package phpWebSockets
  */
 
-class Console
+class console
 {
 
 	/**

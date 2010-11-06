@@ -7,7 +7,7 @@
  * @package phpWebSockets
  */
 
-class WebSocket extends socket
+class websocket extends socket
 {
 	private $clients = array();
 	private $handshakes = array();
@@ -57,7 +57,7 @@ class WebSocket extends socket
 					# using array key from allsockets array, is that ok?
 					# i want to avoid the often array_search calls
 					$socket_index = array_search($client,$this->allsockets);
-					$this->clients[$socket_index] = new Client($client, $socket_index);
+					$this->clients[$socket_index] = new client($client, $socket_index);
 
 					console::log($client . ' CONNECTED with id:' . $socket_index . '!');
 				}
@@ -185,7 +185,7 @@ class WebSocket extends socket
 		$this->sendResponse($msg);
 
 		socket_close($socket);
-		Console::log($socket." disconnected! (index: {$index})");
+		console::log($socket." disconnected! (index: {$index})");
 	}
 
 

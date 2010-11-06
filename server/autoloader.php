@@ -18,8 +18,10 @@ class autoloader {
 
     public function class_load($class)
     {
-        set_include_path(get_include_path().PATH_SEPARATOR.BASE_PATH.'\server\class\\');
-        spl_autoload_extensions('.class.php');
+        $new_path = get_include_path().PATH_SEPARATOR.AUTOLOADER_PATH;
+        set_include_path($new_path);
+        $ret = spl_autoload_extensions('.class.php');
+        //echo $new_path . '/' . $class . $ret;
         spl_autoload($class);
     }
 

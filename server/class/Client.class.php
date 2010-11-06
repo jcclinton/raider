@@ -1,6 +1,6 @@
 <?php
 
-class Client extends User
+class client extends user
 {
 	protected $_socket;
 	protected $_id;
@@ -19,7 +19,7 @@ class Client extends User
 
 	public function __destruct() {
 		unset(self::$units[$this->_id]);
-		Console::log('destroying socket: ' . $this->_id);
+		console::log('destroying socket: ' . $this->_id);
 	}
 
 	public function getId(){
