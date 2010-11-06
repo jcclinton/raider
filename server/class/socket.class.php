@@ -23,7 +23,7 @@ class socket
 	 */
 	protected $allsockets = array();
 
-	public function __construct($host='localhost',$port=8000,$max=100)
+	public function __construct($host=IP_ADDRESS, $port=PORT, $max=100)
 	{
 		$this->createSocket($host,$port);
 	}

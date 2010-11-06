@@ -200,7 +200,8 @@
 
 	socketController = {
 		connect : function(){
-				var host = "ws://localhost:8000/php2d/server/startDaemon.php";
+				//var host = "ws://localhost:8000/php2d/server/startDaemon.php";
+				var host = "ws://65.49.73.225:8000/php2d/server/startDaemon.php";
 
 				try{
 					this.socket = new WebSocket(host);
