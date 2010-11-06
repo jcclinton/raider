@@ -11,7 +11,7 @@
 				this.set(attributes);
 				var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
 				var name = 'sprite'+this.get('id');
-				$('#canvas').append('<img src="images/'+img+'" id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
+				$('#canvas').append('<img src="client/images/'+img+'" id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
 				console.log('creating model');
 				list.add(this);
 				new UnitView({model: this, el: $('#'+name)});

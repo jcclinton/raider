@@ -2,8 +2,8 @@
 <html>
 <head>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-<script src="underscore.js"></script>
-<script src="backbone.js"></script>
+<script src="client/underscore.js"></script>
+<script src="client/backbone.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
 
@@ -65,5 +65,5 @@ body{font-family:Arial, Helvetica, sans-serif;}
 	<div style="clear:both;"></div>
 	<div>
 </body>
-<script src="socket.js"></script>
+<script src="client/socket.js"></script>
 </html>
