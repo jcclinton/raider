@@ -263,15 +263,17 @@
 			var text = msg.text;
 			var id = msg.id;
 			var pid = msg.pid;
-			text = text + ' id:' + id;
+			text = text + ' pid:'+pid;
+			if(id){
+				text = text + ' id:' + id
+			}
 
 			if(msg.command == 'close'){
-					//TODO ADD IN LOGIC TO REMOVE ALL ELEMENTS WITH THIS PID
 					console.log('CLOSING pid: ' + pid);
 					var to_remove = list.select(function(e){
 						return e.get('pid') == pid;
 					});
-					
+
 					_.each(to_remove, function(e){
 						list.remove(e);
 					});
