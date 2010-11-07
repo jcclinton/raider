@@ -28,7 +28,6 @@ class gameloop extends websocket{
 			$this->_dt = $time_start - $time_end;
 			$time_end = $time_start;
 
-			$this->_queue = $this->getInput();
 			$this->update();
 
 			if($this->_dt < self::MIN_CYCLE_TIME){
@@ -43,7 +42,7 @@ class gameloop extends websocket{
 	*
 	*/
 
-	private function init($new_ws = true){
+	private function init(){
 		self::$_reset = false;
 	}
 
@@ -57,10 +56,12 @@ class gameloop extends websocket{
 	*
 	*/
 	private function update(){
-		if(!empty($this->_queue)){
-			foreach($this->_queue as $action_array){
-				$action = $action_array['action'];
-				$id = $action_array['id'];
+		$action_array = $this->getInput();
+		if(!empty($action_array)){
+			foreach($action_array as $action){
+				//$action = $action_array['action'];
+				$action = json_decode($action, true);
+				$id = $action['id'];
 				$unit = client::getUnit($id);
 
 				//$unit will be null if the client disconnects
@@ -74,7 +75,6 @@ class gameloop extends websocket{
 					self::setSendFlag(false);
 				}
 			}
-			$this->_queue = array();
 		}
 	}
 

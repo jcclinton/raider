@@ -59,7 +59,7 @@ class websocket extends socket
 					$socket_index = array_search($client,$this->allsockets);
 					$this->clients[$socket_index] = new client($client, $socket_index);
 
-					console::log($client . ' CONNECTED with id:' . $socket_index . '!');
+					console::log($client . ' CONNECTED with pid:' . $socket_index . '!');
 				}
 			}
 			# client socket has sent data
@@ -81,29 +81,28 @@ class websocket extends socket
 					{
 						$this->doHandshake($buffer,$socket,$socket_index);
 
-						$new = true;
-
-						if($new){
-							$this->createNewUnit($socket_index);
-						}else{
-							$msg = array('response' => 'sucess', 'id' => $socket_index, 'command' => 'init', 'text' => 'id received', 'x' => 200, 'y' => 200);
-							$this->sendResponse($msg, $socket_index);
-
-
-							//send out the existing ids to all the sockets so they are updated with all existing information
-							foreach( $this->clients as $new_socket_index => $socket_obj ){
-								# master socket changed means there is a new socket request
-								$msg = array('response' => 'sucess', 'id' => $new_socket_index, 'command' => 'create', 'text' => 'send other objects', 'x' => 200, 'y' => 200);
-								$this->sendResponse($msg);
+						//send out the existing ids to all the sockets so they are updated with all existing information
+						foreach($this->clients as $new_pid => $client_obj ){
+							$unit_ids = $client_obj->getMemberUnitIds();
+							$pid = $client_obj->getPid();
+							if($pid != $socket_index){
+								foreach($unit_ids as $id){
+									$unit = client::getUnit($id);
+									# master socket changed means there is a new socket request
+									$msg = array('response' => 'sucess', 'pid' => $pid, 'id' => $id, 'command' => 'create', 'text' => 'initially create other objects', 'x' => $unit->getX(), 'y' => $unit->getY());
+									$this->sendResponse($msg);
+								}
 							}
 						}
+
+						$this->createNewUnit($socket_index);
 					}
 					# handshake already done, read data
 					else
 					{
 						$action = substr($buffer,1,$bytes-2); // remove chr(0) and chr(255)
 
-						$queue[] = array('id'=> $socket_index, 'action'=>$action);
+						$queue[] = $action;
 						if($action){
 							console::log('receiving: ' . $action);
 						}else{
@@ -172,16 +171,13 @@ class websocket extends socket
 		$index = array_search($socket,$this->allsockets);
 		if( $index )
 		{
-			$client = $this->clients[$index];
-			//$client->destroy();
-			unset($client);
 			unset($this->allsockets[$index]);
 			unset($this->clients[$index]);
 			unset($this->handshakes[$index]);
 		}
 
 		//send message to other clients that this socket has dropped
-		$msg = array('response' => 'sucess', 'id' => $index, 'command' => 'close', 'text' => 'user dropped');
+		$msg = array('response' => 'sucess', 'pid' => $index, 'command' => 'close', 'text' => 'user dropped');
 		$this->sendResponse($msg);
 
 		socket_close($socket);

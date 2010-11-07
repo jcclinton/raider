@@ -11,7 +11,7 @@
 				this.set(attributes);
 				var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
 				var name = 'sprite'+this.get('id');
-				$('#canvas').append('<img src="client/images/'+img+'" id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;" />');
+				$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/'+img+'" /></div>');
 				console.log('creating model');
 				list.add(this);
 				new UnitView({model: this, el: $('#'+name)});
@@ -21,10 +21,8 @@
 				return this.get('current');
 			},
 
-			init: function(data){
-				var new_id = data.id;
-				this.set({id: new_id});
-				console.log('initializing model to id: '+this.get('id'));
+			isSelected: function(){
+				return this.get('selected');
 			},
 
 			moveModel: function(msg){
@@ -51,20 +49,39 @@
 		  initialize: function() {
 		  	console.log('view init');
 
-  			_.bindAll(this, 'render', 'move', 'remove', 'createEvents');
+  			_.bindAll(this, 'render', 'move', 'remove', 'createEvents', 'toggleSelected');
 		  	this.model.view = this;
 		  	if(this.model.isMe()){
 		  		this.createEvents();
+			  	var ev = {'mousedown': 'select'};
+			  	this.handleEvents(ev);
+			  	this.model.bind('change:selected', this.toggleSelected);
 		  	}else{
 			  	this.model.bind('moveUnit', this.render);
 			  	list.bind('remove', this.remove);
-			  	//this.handleEvents();
 		  	}
-			  	list.bind('removeAll', this.removeAll);
+			list.bind('removeAll', this.removeAll);
+
 		  },
 
 		  events: {
-		    "click":          "move"
+		    "mousedown":          "move"
+		  },
+
+
+		  select: function(){
+		  	console.log('selected!');
+		  	this.model.set({selected: 1});
+		  	return this;
+		  },
+
+		  toggleSelected: function(){
+		  	var selected = this.model.isSelected();
+		  	if(selected == 0){
+		  		this.el.removeClass('selectedUnit');
+		  	}else{
+		  		this.el.addClass('selectedUnit');
+		  	}
 		  },
 
 		  render: function() {
@@ -83,7 +100,7 @@
 			//this.model.save();
 
 			this.el.stop();
-					console.log('rendering to:'+this.model.get('x') +', ' + this.model.get('y'));
+			console.log('rendering to:'+this.model.get('x') +', ' + this.model.get('y'));
 
 			this.el.animate({
 				top: this.model.get('y'),
@@ -115,6 +132,10 @@
 			},
 
 		  move: function(e){
+		  	if(e.which != 3 || !this.model.isSelected()){
+		  		console.log('not moving!');
+		  		return this;
+		  	}
 			console.log('move');
 
 			//var dx = e.offsetX - 8;
@@ -174,7 +195,9 @@
 			}else{
 				var x = model.get('x');
 				var y = model.get('y');
-				var msg = '{"action":"move", "x":'+x+', "y":'+y+'}';
+				var id = model.id;
+				var pid = model.get('pid');
+				var msg = '{"action":"move", "x":'+x+', "y":'+y+', "id":'+id+', "pid": '+pid+'}';
 			}
 			socketController.send(msg);
 		}
@@ -198,7 +221,7 @@
 
 
 
-	socketController = {
+	var socketController = {
 		connect : function(){
 				//var host = "ws://localhost:8000/php2d/server/startDaemon.php";
 				var host = "ws://65.49.73.225:8000/php2d/server/startDaemon.php";
@@ -238,27 +261,31 @@
 			//this.message(msg.data, 1);
 			msg = this.getMessageObject(msg.data);
 			var text = msg.text;
-			text = text + ' id:' + msg.id;
+			var id = msg.id;
+			var pid = msg.pid;
+			text = text + ' id:' + id;
 
-			var e = list.get(msg.id);
-			if(msg.command == 'init' || msg.command == 'create'){
-				if(!e){
-					var lx, ly;
-					lx = msg.x;
-					ly = msg.y;
+			if(msg.command == 'close'){
+					//TODO ADD IN LOGIC TO REMOVE ALL ELEMENTS WITH THIS PID
+					console.log('CLOSING pid: ' + pid);
+					//list.remove(e);
+			}else{
+				var e = list.get(id);
+				if(msg.command == 'init' || msg.command == 'create'){
+					if(!e){
+						console.log(msg.command);
+						var lx, ly;
+						lx = msg.x;
+						ly = msg.y;
 
-					var obj = {x: lx, y: ly, id: msg.id, dx: 0, dy: 0};
-					obj.current = (msg.command == 'init')?1:0;
-					var u = new Unit(obj);
-				}
-			}else if(msg.command == 'move'){
-				if(e && e.isMe() == 0){
-					e.moveModel({dx: msg.x, dy: msg.y});
-				}
-			}else if(msg.command == 'close'){
-				if(e){
-					console.log('CLOSING id: ' + e.id);
-					list.remove(e);
+						var obj = {x: lx, y: ly, dx: 0, dy: 0, selected: 0, pid: pid, id: id};
+						obj.current = (msg.command == 'init')?1:0;
+						var u = new Unit(obj);
+					}
+				}else if(msg.command == 'move'){
+					if(e && e.isMe() == 0){
+						e.moveModel({dx: msg.x, dy: msg.y});
+					}
 				}
 			}
 
@@ -304,11 +331,36 @@
 	socketController.connect();
 	$('#disconnect').bind('click', function(){socketController.close();});
 	$('#connect').bind('click', function(){socketController.connect();});
+	$('#unselect').bind('click', function(){
+		list.each(function(model){
+			if(model.isMe()){
+				model.set({'selected':0});
+			}
+		});
+	});
 
 
 
 
-
+ var isNS = (navigator.appName == "Netscape") ? 1 : 0;
+  if(navigator.appName == "Netscape") document.captureEvents(Event.MOUSEDOWN||Event.MOUSEUP);
+  function mischandler(){
+   return false;
+ }
+  function mousehandler(e){
+ 	var myevent = (isNS) ? e : event;
+ 	console.log(myevent);
+ 	var eventbutton = (isNS) ? myevent.which : myevent.button;
+    if((eventbutton==2)||(eventbutton==3))
+    {
+    	$('#canvas').trigger('click', myevent);
+	    return false;
+	}
+ }
+ /*document.oncontextmenu = mischandler;
+ document.onmousedown = mousehandler;
+ document.onmouseup = mousehandler;*/
+ $('#canvas').bind("contextmenu", function(e){ return false; });
 
 
 

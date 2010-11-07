@@ -5,23 +5,36 @@ class unit
 
 	private $unit = array();
 
-	public function __construct($id)
+	protected $_pid;
+	protected $_id;
+
+	public function __construct($pid, $id, $data)
 	{
 		$unit = array();
 		$unit['speed'] = 250; //pixels per second
-		$unit['x'] = 200;
-		$unit['y'] = 200;
+		$unit['x'] = $data['x'];
+		$unit['y'] = $data['y'];
 		$unit['dx'] = null;
 		$unit['dy'] = null;
 		$unit['status'] = 'stopped';
 		$unit['command'] = 'stop';
-		$unit['id'] = $id;
+
 		$this->unit = $unit;
+
+		$this->_pid = $pid;
+		$this->_id = $id;
 	}
 
-	public function update($dt, $action = null){
-		if($action){
-			$data = json_decode($action, true);
+	public function getX(){
+		return $this->unit['x'];
+	}
+
+	public function getY(){
+		return $this->unit['y'];
+	}
+
+	public function update($dt, $data = null){
+		if(!empty($data)){
 			if(method_exists($this, $data['action'])){
 				$this->$data['action']($data['x'], $data['y']);
 				gameloop::setSendFlag(true);
@@ -34,7 +47,7 @@ class unit
 	}
 
 	public function getResponse(){
-		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'id' => $this->unit['id']);
+		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'pid' => $this->_pid, 'id' => $this->_id);
 		return $msg;
 	}
 

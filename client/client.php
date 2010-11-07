@@ -41,6 +41,10 @@ body{font-family:Arial, Helvetica, sans-serif;}
 .fl{
 	float:left;
 }
+
+.selectedUnit{
+	outline: 1px red solid;
+}
 </style>
 <title>WebSockets Client</title>
 
@@ -60,6 +64,7 @@ body{font-family:Arial, Helvetica, sans-serif;}
         </div>
         <button id="disconnect">Disconnect</button>
         <button id="connect">Connect</button>
+        <button id="unselect">Unselect all</button>
 
 	</div>
 	<div style="clear:both;"></div>
