@@ -268,7 +268,13 @@
 			if(msg.command == 'close'){
 					//TODO ADD IN LOGIC TO REMOVE ALL ELEMENTS WITH THIS PID
 					console.log('CLOSING pid: ' + pid);
-					//list.remove(e);
+					var to_remove = list.select(function(e){
+						return e.get('pid') == pid;
+					});
+					
+					_.each(to_remove, function(e){
+						list.remove(e);
+					});
 			}else{
 				var e = list.get(id);
 				if(msg.command == 'init' || msg.command == 'create'){
