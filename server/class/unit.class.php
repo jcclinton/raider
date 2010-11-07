@@ -8,6 +8,8 @@ class unit
 	protected $_pid;
 	protected $_id;
 
+	protected $_team;
+
 	public function __construct($pid, $id, $data)
 	{
 		$unit = array();
@@ -21,6 +23,8 @@ class unit
 
 		$this->unit = $unit;
 
+		$this->_team = $data['team'];
+
 		$this->_pid = $pid;
 		$this->_id = $id;
 	}
@@ -31,6 +35,10 @@ class unit
 
 	public function getY(){
 		return $this->unit['y'];
+	}
+
+	public function getTeam(){
+		return $this->_team;
 	}
 
 	public function update($dt, $data = null){
@@ -47,8 +55,10 @@ class unit
 	}
 
 	public function getResponse(){
+		$response = array();
 		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'pid' => $this->_pid, 'id' => $this->_id);
-		return $msg;
+		$response[] = array('msg' => $msg);
+		return $response;
 	}
 
 	/*protected function updatePosition($dt){

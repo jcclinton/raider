@@ -9,7 +9,7 @@
 
 class websocket extends socket
 {
-	private $clients = array();
+	protected $clients = array();
 	private $handshakes = array();
 
 	public function __construct()
@@ -82,20 +82,9 @@ class websocket extends socket
 						$this->doHandshake($buffer,$socket,$socket_index);
 
 						//send out the existing ids to all the sockets so they are updated with all existing information
-						foreach($this->clients as $new_pid => $client_obj ){
-							$unit_ids = $client_obj->getMemberUnitIds();
-							$pid = $client_obj->getPid();
-							if($pid != $socket_index){
-								foreach($unit_ids as $id){
-									$unit = client::getUnit($id);
-									# master socket changed means there is a new socket request
-									$msg = array('response' => 'sucess', 'pid' => $pid, 'id' => $id, 'command' => 'create', 'text' => 'initially create other objects', 'x' => $unit->getX(), 'y' => $unit->getY());
-									$this->sendResponse($msg);
-								}
-							}
-						}
+						$this->updateForNewClient($socket_index);
 
-						$this->createNewUnit($socket_index);
+						//$this->createNewUnit($socket_index);
 					}
 					# handshake already done, read data
 					else
@@ -122,19 +111,23 @@ class websocket extends socket
 
 	public function sendResponse($msg, $index = null){
 		//$msg = array('response' => 'sucess', 'text' => 'moving', 'x'=>$this->unit['x'], 'y'=>$this->unit['y']);
-		$retval = json_encode($msg);
+		if(!empty($msg)){
+			$retval = json_encode($msg);
 
-		if($index){
-			$socket = $this->allsockets[$index];
-			if( $socket!=$this->master ){
-				$this->send($socket, $retval);
-			}
-		}else{
-			foreach($this->allsockets as $socket){
+			if($index){
+				$socket = $this->allsockets[$index];
 				if( $socket!=$this->master ){
-					$this->send($socket, $retval);
+					$this->send($socket, $retval, $index);
+				}
+			}else{
+				foreach($this->allsockets as $key => $socket){
+					if( $socket!=$this->master ){
+						$this->send($socket, $retval, $key);
+					}
 				}
 			}
+		}else{
+			console::log('EMPTY MESSAGE TRYING TO BE SENT');
 		}
 	}
 
@@ -158,7 +151,48 @@ class websocket extends socket
 	protected function createNewUnit($socket_index){
 		$client = $this->clients[$socket_index];
 		$response = $client->createNewUnit($this->clients);
-		$this->handleClientResponse($response);
+
+		if(gameloop::shouldSend()){
+			$this->handleClientResponse($response);
+			gameloop::setSendFlag(false);
+		}
+	}
+
+	protected function updateForNewClient($socket_index){
+		// first send the pid to the client so it can be initialized
+		$msg = array();
+		$msg['response'] = 'sucess';
+		$msg['pid'] = $socket_index;
+		$msg['command'] = 'init';
+		$msg['text'] = 'initialize client';
+		$this->sendResponse($msg, $socket_index);
+
+		// second send all existing units to the new client
+		foreach($this->clients as $new_pid => $client_obj ){
+			$unit_ids = $client_obj->getMemberUnitIds();
+			$pid = $client_obj->getPid();
+			if($pid != $socket_index){
+				foreach($unit_ids as $id){
+					$unit = client::getUnit($id);
+					$x = $unit->getX();
+					$y = $unit->getY();
+					$team = $unit->getTeam();
+					$is_me = ($pid == $socket_index)?1:0;
+					# master socket changed means there is a new socket request
+					$msg = array();
+					$msg['response'] = 'sucess';
+					$msg['pid'] = $new_pid;
+					$msg['id'] = $id;
+					$msg['command'] = 'create';
+					$msg['text'] = 'initially create other objects';
+					$msg['x'] = $x;
+					$msg['y'] = $y;
+					$msg['is_me'] = $is_me;
+					$msg['team'] = $team;
+					$this->sendResponse($msg, $socket_index);
+				}
+			}
+		}
 	}
 
 	/**
@@ -257,9 +291,13 @@ class websocket extends socket
 	 * @param socket $client The socket to which we send data
 	 * @param string $msg  The message we send
 	 */
-	protected function send($client,$msg)
+	protected function send($client,$msg, $index = 0)
 	{
-		console::log(">>>{$msg}");
+		$bfr = ">>>{$msg}";
+		if($index){
+			$bfr = $index . ' ' . $bfr;
+		}
+		console::log($bfr);
 
 		parent::send($client,chr(0).$msg.chr(255));
 	}

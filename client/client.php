@@ -58,13 +58,14 @@ body{font-family:Arial, Helvetica, sans-serif;}
   	<div id="container" class="fl">
 
     	<h1>WebSockets Client</h1>
+        <button id="disconnect">Disconnect</button>
+        <button id="connect">Connect</button>
+        <button id="unselect">Unselect all</button>
+        <button id="add">Add Unit</button>
 
         <div id="chatLog">
 
         </div>
-        <button id="disconnect">Disconnect</button>
-        <button id="connect">Connect</button>
-        <button id="unselect">Unselect all</button>
 
 	</div>
 	<div style="clear:both;"></div>

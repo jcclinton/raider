@@ -3,13 +3,24 @@
 		UnitList = Backbone.Collection.extend({});
 		list = new UnitList();
 
+		Client = Backbone.Model.extend({
+			initialize: function(attributes){
+				this.set(attributes);
+			},
+
+			getPid: function(){
+				return this.get('pid');
+			}
+		});
+
 
 
 		Unit = Backbone.Model.extend({
 
 			initialize: function(attributes) {
 				this.set(attributes);
-				var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
+				//var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
+				var img = this.getImg();
 				var name = 'sprite'+this.get('id');
 				$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/'+img+'" /></div>');
 				console.log('creating model');
@@ -24,6 +35,52 @@
 			isSelected: function(){
 				return this.get('selected');
 			},
+
+			getImg: function(){
+				var img_arr = (this.get('team') == 'light')?this.light_imgs:this.dark_imgs;
+				console.log(this.get('team'));
+
+				var nums = img_arr.length;
+				var modulo = this.get('id') % nums;
+
+
+				return img_arr[modulo] + '.big.0.png';
+			},
+
+			light_imgs: [
+				'',
+				'arilou',
+				'chenjesu',
+				'chmmr',
+				'human',
+				'melnorme',
+				'mmrnmhrm',
+				'orz',
+				'pkunk',
+				'shofixti',
+				'sis',
+				'supox',
+				'syreen',
+				'utwig',
+				'yehat',
+				'zoqfot'
+			],
+
+			dark_imgs: [
+				'',
+				'androsyn',
+				'blackurq',
+				'druuge',
+				'ilwrath',
+				'mycon',
+				'slylandr',
+				'spathi',
+				'thradd',
+				'umgah',
+				'urquan',
+				'vux'
+
+			],
 
 			moveModel: function(msg){
 				console.log('moving model');
@@ -277,18 +334,24 @@
 					_.each(to_remove, function(e){
 						list.remove(e);
 					});
+			}else if(msg.command == 'init'){
+				var pid = {pid: msg.pid};
+				client = new Client(pid);
 			}else{
 				var e = list.get(id);
-				if(msg.command == 'init' || msg.command == 'create'){
+				if(msg.command == 'create'){
 					if(!e){
 						console.log(msg.command);
 						var lx, ly;
 						lx = msg.x;
 						ly = msg.y;
 
-						var obj = {x: lx, y: ly, dx: 0, dy: 0, selected: 0, pid: pid, id: id};
-						obj.current = (msg.command == 'init')?1:0;
+						var obj = {x: lx, y: ly, dx: 0, dy: 0, selected: 0, pid: pid, id: id, current: msg.is_me, team: msg.team};
+						//obj.current = (msg.command == 'init')?1:0;
+						//obj.current = msg.is_me;
 						var u = new Unit(obj);
+					}else{
+						console.log('doh!!');
 					}
 				}else if(msg.command == 'move'){
 					if(e && e.isMe() == 0){
@@ -347,27 +410,15 @@
 		});
 	});
 
+	$('#add').bind('click', function(){
+		var pid = client.getPid();
+		var msg = '{"action":"add", "pid": '+pid+'}';
+		socketController.send(msg);
+
+	});
 
 
 
- var isNS = (navigator.appName == "Netscape") ? 1 : 0;
-  if(navigator.appName == "Netscape") document.captureEvents(Event.MOUSEDOWN||Event.MOUSEUP);
-  function mischandler(){
-   return false;
- }
-  function mousehandler(e){
- 	var myevent = (isNS) ? e : event;
- 	console.log(myevent);
- 	var eventbutton = (isNS) ? myevent.which : myevent.button;
-    if((eventbutton==2)||(eventbutton==3))
-    {
-    	$('#canvas').trigger('click', myevent);
-	    return false;
-	}
- }
- /*document.oncontextmenu = mischandler;
- document.onmousedown = mousehandler;
- document.onmouseup = mousehandler;*/
  $('#canvas').bind("contextmenu", function(e){ return false; });
 
 

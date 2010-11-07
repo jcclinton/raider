@@ -40,31 +40,67 @@ class client extends user
     	return $this->m_units;
     }
 
+    public function update($dt, $action, $clients){
+		$id = $action['id'];
+		$unit = client::getUnit($id);
+		$msg = '';
+		if($action['action'] == 'add'){
+			$msg = $this->createNewUnit($clients);
+		}else if($unit instanceof unit){
+			//$unit will be null if the client disconnects
+			$unit->update($dt, $action);
+
+			$msg = $unit->getResponse();
+		}
+		return $msg;
+    }
+
     public function createNewUnit($clients){
 
     	$pid = $this->_pid;
 
-    	$x = ($pid % 2 == 0)?200:100;
-    	$y = 200;
+    	$modulo = ($pid % 2) == 0;
 
-    	$data = array('x' => $x, 'y' => $y);
+    	$dx = $modulo?50:0;
+    	$dy = $modulo?0:50;
+    	$base = 20;
+    	$x = $base + $dx * self::$_unitIndex;
+    	$y = $base + $dy * self::$_unitIndex;
+
+
+    	$team = $modulo?'light':'dark';
+
+    	$data = array('x' => $x, 'y' => $y, 'team' => $team);
 
     	$id = self::addNewUnit($pid, $data);
     	$this->m_units[] = $id;
 
+
+
     	$response = array();
-		$msg = array('response' => 'sucess', 'pid' => $pid, 'id' => $id, 'command' => 'init', 'text' => 'init new', 'x' => $x, 'y' => $y);
+		//$msg = array('response' => 'sucess', 'pid' => $pid, 'id' => $id, 'command' => 'init', 'text' => 'init new', 'x' => $x, 'y' => $y);
 		//$this->sendResponse($msg, $pid);
-		$response[] = array('msg' => $msg, 'index' => $pid);
+		//$response[] = array('msg' => $msg, 'index' => $pid);
 
 
 		//send out the existing ids to all the sockets so they are updated with all existing information
 		foreach($clients as $new_pid => $client_obj ){
+			$is_me = ($new_pid == $pid)?1:0;
 			# master socket changed means there is a new socket request
-			$msg = array('response' => 'sucess', 'pid' => $pid, 'id' => $id, 'command' => 'create', 'text' => 'create other objects', 'x' => $x, 'y' => $y);
+			$msg = array();
+			$msg['response'] = 'sucess';
+			$msg['pid'] = $pid;
+			$msg['id'] = $id;
+			$msg['command'] = 'create';
+			$msg['text'] = 'create new object';
+			$msg['x'] = $x;
+			$msg['y'] = $y;
+			$msg['is_me'] = $is_me;
+			$msg['team'] = $team;
 			//$this->sendResponse($msg);
-			$response[] = array('msg' => $msg);
+			$response[] = array('msg' => $msg, 'index' => $new_pid);
 		}
+			gameloop::setSendFlag(true);
 		return $response;
     }
 

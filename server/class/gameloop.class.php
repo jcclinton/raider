@@ -3,7 +3,6 @@ class gameloop extends websocket{
 
 	protected $_dt = 0;
 
-	protected $_queue = array();
 	protected static $_sendFlag = false;
 	protected static $_reset = false;
 
@@ -61,17 +60,25 @@ class gameloop extends websocket{
 			foreach($action_array as $action){
 				//$action = $action_array['action'];
 				$action = json_decode($action, true);
-				$id = $action['id'];
-				$unit = client::getUnit($id);
+				$pid = $action['pid'];
 
-				//$unit will be null if the client disconnects
-				if($unit instanceof unit){
-					$unit->update($this->_dt, $action);
+				$client = $this->clients[$pid];
+
+				if($client instanceof client){
+					$msg = $client->update($this->_dt, $action, $this->clients);
 				}
 
+				/*
+
+				if($action['action'] == 'add'){
+
+				}else if($unit instanceof unit){
+					//$unit will be null if the client disconnects
+					$unit->update($this->_dt, $action);
+				}*/
+
 				if(self::shouldSend()){
-					$msg = $unit->getResponse();
-					$this->sendResponse($msg);
+					$this->handleClientResponse($msg);
 					self::setSendFlag(false);
 				}
 			}
