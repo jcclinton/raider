@@ -56,7 +56,7 @@ class unit
 
 	public function getResponse(){
 		$response = array();
-		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['dx'], 'y'=>$this->unit['dy'], 'pid' => $this->_pid, 'id' => $this->_id);
+		$msg = array('response' => 'sucess', 'command'=>$this->unit['command'], 'text' => $this->unit['status'], 'x'=>$this->unit['x'], 'y'=>$this->unit['y'], 'pid' => $this->_pid, 'id' => $this->_id);
 		$response[] = array('msg' => $msg);
 		return $response;
 	}
@@ -111,14 +111,14 @@ class unit
 
 
 	protected function move($x, $y){
-		$this->unit['dx'] = $x;
-		$this->unit['dy'] = $y;
+		console::log('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$x . ', '.$y);
+		$this->unit['x'] = $x;
+		$this->unit['y'] = $y;
 		$this->unit['status'] = 'moving';
 		$this->unit['command'] = 'move';
-		console::log('currently at: '.$this->unit['x'].','.$this->unit['y'].'. going to '.$this->unit['dx'] . ', '.$this->unit['dy']);
 	}
 
-	protected function arrived($x, $y){
+	/*protected function arrived($x, $y){
 		$this->unit['x'] = $x;
 		$this->unit['y'] = $y;
 		$this->unit['dx'] = null;
@@ -126,7 +126,7 @@ class unit
 		$this->unit['status'] = 'stopped';
 		$this->unit['command'] = 'stop';
 		console::log('arrived at: '.$this->unit['x'].','.$this->unit['y']);
-	}
+	}*/
 }
 
 ?>

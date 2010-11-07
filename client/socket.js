@@ -1,7 +1,21 @@
 
 
-		UnitList = Backbone.Collection.extend({});
+		UnitList = Backbone.Collection.extend({
+
+			removeAll: function(){
+				console.log('removing all: ' + list.length);
+				list.each(function(e){
+				console.log('removing: '+e.id);
+					list.remove(e, {silent: true});
+					list.trigger('remove:'+e.id);
+				});
+			}
+
+		});
+		//_.bindAll(UnitList);
 		list = new UnitList();
+		list.bind('removeAll', list.removeAll);
+
 
 		Client = Backbone.Model.extend({
 			initialize: function(attributes){
@@ -19,13 +33,16 @@
 
 			initialize: function(attributes) {
 				this.set(attributes);
-				//var img = (this.get('id')%2==0)?'zoqfot.big.12.png':'blackurq.big.0.png';
+				var name = this.getName();
 				var img = this.getImg();
-				var name = 'sprite'+this.get('id');
 				$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/'+img+'" /></div>');
 				console.log('creating model');
 				list.add(this);
 				new UnitView({model: this, el: $('#'+name)});
+			},
+
+			getName: function(){
+				return 'sprite'+this.get('id');
 			},
 
 			isMe: function(){
@@ -48,7 +65,6 @@
 			},
 
 			light_imgs: [
-				'',
 				'arilou',
 				'chenjesu',
 				'chmmr',
@@ -67,7 +83,6 @@
 			],
 
 			dark_imgs: [
-				'',
 				'androsyn',
 				'blackurq',
 				'druuge',
@@ -115,9 +130,8 @@
 			  	this.model.bind('change:selected', this.toggleSelected);
 		  	}else{
 			  	this.model.bind('moveUnit', this.render);
-			  	list.bind('remove', this.remove);
 		  	}
-			list.bind('removeAll', this.removeAll);
+			list.bind('remove:'+this.model.id, this.remove);
 
 		  },
 
@@ -220,17 +234,9 @@
 		  },
 
 		  remove: function(){
-		  	console.log('removing');
 		  	this.el.remove();
 		  	this.model.destroy();
-		  },
-
-			removeAll: function(){
-				list.each(function(e){
-					var mdl = list.get(e.id);
-					list.remove(mdl);
-				});
-			}
+		  }
 
 		});
 
@@ -332,7 +338,8 @@
 					});
 
 					_.each(to_remove, function(e){
-						list.remove(e);
+						list.remove(e, {silent: true});
+						list.trigger('remove:'+e.id);
 					});
 			}else if(msg.command == 'init'){
 				var pid = {pid: msg.pid};

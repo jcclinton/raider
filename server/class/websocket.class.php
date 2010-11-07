@@ -148,7 +148,7 @@ class websocket extends socket
 	}
 
 
-	protected function createNewUnit($socket_index){
+	/*protected function createNewUnit($socket_index){
 		$client = $this->clients[$socket_index];
 		$response = $client->createNewUnit($this->clients);
 
@@ -156,7 +156,7 @@ class websocket extends socket
 			$this->handleClientResponse($response);
 			gameloop::setSendFlag(false);
 		}
-	}
+	}*/
 
 	protected function updateForNewClient($socket_index){
 		// first send the pid to the client so it can be initialized

@@ -61,11 +61,22 @@ class client extends user
 
     	$modulo = ($pid % 2) == 0;
 
+    	$max = 400;
+
     	$dx = $modulo?50:0;
     	$dy = $modulo?0:50;
     	$base = 20;
     	$x = $base + $dx * self::$_unitIndex;
     	$y = $base + $dy * self::$_unitIndex;
+
+    	if($x > $max){
+    		$tx = $x;
+	    	$x -= floor($tx / $max)*$max;
+	    	console::log('changing ' . $tx . ' to ' . $x. ' with mod ' . ($tx % $max) . ' and calced ' . (($tx % $max)*$max) . ' with max ' . $max);
+	    }
+	    if($y > $max){
+	    	$y -= floor($y / $max)*$max;
+	    }
 
 
     	$team = $modulo?'light':'dark';
