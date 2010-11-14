@@ -35,8 +35,8 @@
 				this.set(attributes);
 			},
 
-			getPid: function(){
-				return this.get('pid');
+			getUid: function(){
+				return this.get('uid');
 			}
 		});
 
@@ -133,8 +133,8 @@
 				var x = this.get('x');
 				var y = this.get('y');
 				var id = this.id;
-				var pid = this.get('pid');
-				var msg = '{"action":"move", "x":'+x+', "y":'+y+', "id":'+id+', "pid": '+pid+'}';
+				var uid = this.get('uid');
+				var msg = '{"action":"move", "x":'+x+', "y":'+y+', "id":'+id+', "uid": '+uid+'}';
 				socketController.send(msg);
 			},
 
@@ -330,9 +330,9 @@
 	var socketController = {
 		connect : function(){
 				//var host = "ws://localhost:8000/php2d/server/startDaemon.php";
-				var host = "ws://65.49.73.225:8000/php2d/server/startDaemon.php";
+				var host = "ws://65.49.73.225:8000";
 
-				try{
+				/*try{
 					this.socket = new WebSocket(host);
 					this.message('<p class="event">Socket Status: '+this.socket.readyState+'</p>');
 					this.isConnected = true;
@@ -345,7 +345,16 @@
 				} catch(exception){
 					this.message('<p>Error'+exception+'</p>');
 					this.isConnected = false;
-				}
+				}*/
+
+
+
+
+				this.socket = new io.Socket('65.49.73.225', {port: 8000});
+				this.socket.on('connect', this.open )
+				this.socket.on('message', this.receive )
+				this.socket.on('disconnect', this.onclose )
+				this.socket.connect();
 		},
 
 		open : function(){
@@ -354,7 +363,8 @@
 		},
 
 		close : function(){
-			this.socket.close();
+			//this.socket.close();
+			console.log('uhhhh closing?');
 		},
 
 		onclose : function(){
@@ -364,20 +374,21 @@
 		},
 
 		receive : function(msg){
-			//this.message(msg.data, 1);
-			msg = this.getMessageObject(msg.data);
+			//this.message('<p class="event">data received: '+msg + '</p>');
+			//console.log(msg);
+			msg = this.getMessageObject(msg);
 			var text = msg.text;
 			var id = msg.id;
-			var pid = msg.pid;
-			text = text + ' pid:'+pid;
+			var uid = msg.uid;
+			text = text + ' uid:'+uid;
 			if(id){
 				text = text + ' id:' + id
 			}
 
 			if(msg.command == 'close'){
-					console.log('CLOSING pid: ' + pid);
+					console.log('CLOSING uid: ' + uid);
 					var to_remove = list.select(function(e){
-						return e.get('pid') == pid;
+						return e.get('uid') == uid;
 					});
 
 					_.each(to_remove, function(e){
@@ -385,8 +396,8 @@
 						list.trigger('remove:'+e.id);
 					});
 			}else if(msg.command == 'init'){
-				var pid = {pid: msg.pid};
-				client = new Client(pid);
+				var uid = {uid: msg.uid};
+				client = new Client(uid);
 			}else{
 				var e = list.get(id);
 				if(msg.command == 'create'){
@@ -396,7 +407,7 @@
 						lx = msg.x;
 						ly = msg.y;
 
-						var obj = {x: lx, y: ly, dx: 0, dy: 0, selected: 0, pid: pid, id: id, current: msg.is_me, team: msg.team};
+						var obj = {x: lx, y: ly, dx: 0, dy: 0, selected: 0, uid: uid, id: id, current: msg.is_me, team: msg.team};
 						//obj.current = (msg.command == 'init')?1:0;
 						//obj.current = msg.is_me;
 						var u = new Unit(obj);
@@ -469,8 +480,8 @@
 	});
 
 	$('#add').bind('click', function(){
-		var pid = client.getPid();
-		var msg = '{"action":"add", "pid": '+pid+'}';
+		var uid = client.getUid();
+		var msg = '{action:"add", uid: '+uid+'}';
 		socketController.send(msg);
 
 	});
@@ -478,4 +489,3 @@
 
 
  $('#canvas').bind("contextmenu", function(e){ return false; });
- 

@@ -4,6 +4,7 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script src="client/underscore.js"></script>
 <script src="client/backbone.js"></script>
+<script src="http://cdn.socket.io/stable/socket.io.js"></script>
 <script type="text/javascript">
 $(document).ready(function() {
 
