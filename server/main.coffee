@@ -9,10 +9,10 @@ http = require 'http'
 io = require '/home/jclinton/projects/socket.io'
 fs = require 'fs'
 server = http.createServer (req, res) ->
-    html = fs.readFileSync '/home/jclinton/projects/2d/client.php'
+   # html = fs.readFileSync '/home/jclinton/projects/2d/client.php'
     res.writeHead 200, {'Content-Type': 'text/html'}
     console.log 'request served'
-    res.end html
+    res.end "<h1>Welcome!</h1>"
 
 server.listen PORT, IP_ADDRESS
 console.log 'listening'
@@ -33,6 +33,9 @@ class Hash
     get: (id) ->
         ret = @table[id]
 
+    getAll: ->
+        ret = @table
+
 
 class Clients extends Hash
     add: (uid, clientSocket) ->
@@ -45,6 +48,9 @@ class Clients extends Hash
     get: (uid) ->
         console.log "getting client with uid: #{uid}"
         ret = super uid
+    getAll: ->
+        console.log "getting all clients"
+        ret = super()
 
 clientList = new Clients
 
@@ -73,11 +79,13 @@ handles json requests
 ###
 jsonController =
     makeResponse:
-        (obj) ->
+        (obj, sending_uid) ->
+            is_me = if sending_uid == obj.uid then 1 else 0
+            console.log "***no obj.uid provided!***" if not obj.uid?
             str = ''
             for key, value of obj
                 str = "#{str} #{key}:'#{value}', "
-            "{status: 'success', #{str}}"
+            "{status: 'success', #{str} is_me: #{is_me}}"
     getObject:
         (msg) ->
             eval "ret = #{msg}"
@@ -92,7 +100,10 @@ class Client
 
     add: ->
         spriteList.add @uid
-        console.log "adding sprite"
+        console.log "adding sprite (in client.add)"
+
+    move: ->
+        console.log "moving"
 
 
 ###
@@ -100,7 +111,22 @@ sprite class for storing sprite info
 ###
 class Sprite
     constructor: (@uid, @id) ->
-        console.log "adding sprite with uid: #{@uid} and id: #{@id}"
+        x = 200
+        y = 200
+        team = 'light'
+        @x = x
+        @y = y
+        @team = team
+        obj =
+            uid: @uid
+            id: @id
+            x: x
+            y: y
+            command: 'create'
+            text: 'create new object'
+            team: team
+        socketController.sendAll obj
+        console.log "adding sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
 
 ###
@@ -114,7 +140,7 @@ class SocketController
             clientList.add clientSocket.sessionId, clientSocket
 
             clientSocket.on 'message', (data) ->
-                #console.log data
+                console.log "<<< #{data}"
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
@@ -131,12 +157,22 @@ class SocketController
                 command:'init'
                 uid:clientSocket.sessionId
                 text: 'initializing new client'
-            msg = jsonController.makeResponse obj
-            console.log "sending #{msg}"
-            clientSocket.send msg
+            socketController.send clientSocket, obj
 
             #send all existing sprites to the new client
-    send: (msg) ->
-        @masterSocket.send msg
+    send: (clientSocket, data) ->
+        msg = jsonController.makeResponse data, clientSocket.sessionId
+        clientSocket.send msg
+        console.log ">>> sending #{msg}"
+
+    sendAll: (data) ->
+        clients = clientList.getAll()
+        console.log clients
+        for uid of clients
+            client = clientList.get uid
+            socketController.send client.clientSocket, data
+            console.log "client: #{client.clientSocket}"
+
+
 
 socketController = new SocketController()

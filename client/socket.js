@@ -359,7 +359,7 @@
 
 		open : function(){
 			this.isConnected = true;
-			this.message('<p class="event">Socket Status: '+this.socket.readyState+' (open)'+'</p>');
+			this.message('<p class="event">Socket Status: (open)'+'</p>');
 		},
 
 		close : function(){
@@ -370,7 +370,7 @@
 		onclose : function(){
 			list.trigger('removeAll');
 			this.isConnected = false;
-			this.message('<p class="event bad">Socket Status: '+this.socket.readyState+' (Closed)'+'</p>');
+			this.message('<p class="event bad">Socket Status: (Closed)'+'</p>');
 		},
 
 		receive : function(msg){
