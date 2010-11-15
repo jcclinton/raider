@@ -31,10 +31,10 @@ class Hash
         delete @table[id]
 
     get: (id) ->
-        ret = @table[id]
+        @table[id]
 
     getAll: ->
-        ret = @table
+        @table
 
 
 class Clients extends Hash
@@ -47,10 +47,10 @@ class Clients extends Hash
         super uid
     get: (uid) ->
         console.log "getting client with uid: #{uid}"
-        ret = super uid
+        super uid
     getAll: ->
         console.log "getting all clients"
-        ret = super()
+        super()
 
 clientList = new Clients
 
@@ -66,7 +66,11 @@ class Sprites extends Hash
         console.log "adding sprite with id: #{uid}"
         @index++
         sprite = new Sprite uid, @index
-        super uid, sprite
+        id = sprite.getId()
+        super id, sprite
+    get: (id) ->
+        console.log "getting sprite with id: #{id}"
+        super id
     remove: (uid) ->
         console.log "removing sprite with id: #{uid}"
         super uid
@@ -102,7 +106,18 @@ class Client
         spriteList.add @uid
         console.log "adding sprite (in client.add)"
 
-    move: ->
+    move: (data)->
+        sprite = spriteList.get data.id
+        #console.log "sprite: #{sprite}"
+        sprite.move data
+        obj =
+            uid: data.uid
+            id: data.id
+            x: sprite.getX()
+            y: sprite.getY()
+            command: 'move'
+            text: 'moving'
+        socketController.sendAll obj
         console.log "moving"
 
 
@@ -128,6 +143,19 @@ class Sprite
         socketController.sendAll obj
         console.log "adding sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
+    move: (data) ->
+        @x = data.x
+        @y = data.y
+
+    getId: ->
+        @id
+
+    getX: ->
+        @x
+
+    getY: ->
+        @y
+
 
 ###
 begin listening for websockets
@@ -146,7 +174,7 @@ class SocketController
                 uid = obj.uid
                 client = clientList.get uid
                 #console.log client if client?
-                (client[action])() if client?
+                (client[action])(obj) if client?
                 console.log "ran command: #{action}"
             clientSocket.on 'disconnect', ->
                 clientList.remove clientSocket.sessionId
@@ -167,11 +195,11 @@ class SocketController
 
     sendAll: (data) ->
         clients = clientList.getAll()
-        console.log clients
+        #console.log clients
         for uid of clients
             client = clientList.get uid
             socketController.send client.clientSocket, data
-            console.log "client: #{client.clientSocket}"
+            #console.log "client: #{client.clientSocket}"
 
 
 
