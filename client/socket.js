@@ -188,21 +188,17 @@
 		Projectile = Backbone.Model.extend({
 
 			initialize: function(attributes) {
-				this.set(attributes);
-				var name = this.getName();
-				//$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/fusion.big.0.png" /></div>');
+				attributes.time = new Date().getTime();
+				this.set(attributes, {silent: true});
 				console.log('creating projectile');
-				projectileList.add(this);
+				var silent = this.get('current')==0?true:false;
+				console.log(silent);
+				projectileList.add(this, {silent: silent});
 				new ProjectileView({model: this});
 			},
 
-			getName: function(){
-				var time = new Date().getTime();
-
-				var name = 'projectile' + this.id + time;
-
-				return name;
-
+			getId: function(){
+				return this.id + this.get('time');
 			},
 
 			sendMoveResponse: function(){
@@ -210,8 +206,11 @@
 				var y = this.get('y');
 				var id = this.id;
 				var uid = this.get('uid');
-				var msg = '{"action":"move", "x":'+x+', "y":'+y+', "id":'+id+', "uid": '+uid+'}';
-				//socketController.send(msg);
+				var pid = this.getId();
+				var msg = '{"action":"fire", "pid":'+pid+', "id":'+id+', "uid": '+uid+', "eid": '+this.get('eid')+'}';
+				if(this.get('current') == 1){
+					socketController.send(msg);
+				}
 			},
 		});
 
@@ -368,11 +367,11 @@
 		  		console.log('not firing!');
 		  		return this;
 		  	}
-		  	console.log(e);
 
 			var x, y, dx, dy;
-			dx = 100;
-			dy = 100;
+			//dx = 100;
+			//dy = 100;
+			//eid = 0;
 
 			var enemy = unitList.find(function(unit){
 				return !unit.isMe() && unit.isSelected();
@@ -381,20 +380,14 @@
 			if(enemy){
 				dx = enemy.get('x');
 				dy = enemy.get('y');
+
+				x = this.el.css('left').split('px')[0];
+				y = this.el.css('top').split('px')[0];
+
+
+				var obj = {x: x, y: y, dx: dx, dy: dy, id: this.model.id, eid: enemy.id, uid: this.model.get('uid'), current: this.model.isMe()};
+				new Projectile(obj);
 			}
-
-			//x = this.model.get('x');
-			//y = this.model.get('y');
-
-			//'top:'+this.get('y')+'px; left:'+this.get('x')
-
-			x = this.el.css('left').split('px')[0];
-			y = this.el.css('top').split('px')[0];
-			console.log('getting x,y '+ x + ' ' + y);
-
-
-			var obj = {x: x, y: y, dx: dx, dy: dx, id: this.model.id};
-			new Projectile(obj);
 
 		  },
 
@@ -439,9 +432,9 @@
 		  initialize: function() {
 		  	console.log('projectile view init');
 
-			var name = this.model.getName();
-			$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.model.get('y')+'px; left:'+this.model.get('x')+'px;"><img src="client/images/fusion.big.0.png" /></div>');
-			this.el = $('#'+name);
+			var id = this.model.getId();
+			$('#canvas').append('<div id = "'+id+'" style="position:absolute; top:'+this.model.get('y')+'px; left:'+this.model.get('x')+'px;"><img src="client/images/fusion.big.0.png" /></div>');
+			this.el = $('#'+id);
 
   			_.bindAll(this, 'move', 'remove');
 		  	this.model.view = this;
@@ -480,7 +473,7 @@
 
 		  remove: function(){
 		  	this.el.remove();
-		  	this.model.destroy();
+		  	this.model.destroy({silent:true});
 		  	delete this.model;
 		  }
 
@@ -612,6 +605,25 @@
 				}else if(msg.command == 'move'){
 					if(e && e.isMe() == 0){
 						e.moveModel({dx: msg.x, dy: msg.y});
+					}
+				}else if(msg.command == 'fire'){
+					if(e && e.isMe() == 0){
+						var enemy = unitList.get(msg.eid);
+
+
+						var x, y, dx, dy;
+
+						if(enemy){
+							dx = enemy.get('x');
+							dy = enemy.get('y');
+
+							x = e.view.el.css('left').split('px')[0];
+							y = e.view.el.css('top').split('px')[0];
+
+
+							var obj = {x: x, y: y, dx: dx, dy: dy, id: e.view.model.id, eid: enemy.id, uid: e.view.model.get('uid'), current: e.view.model.isMe()};
+							new Projectile(obj);
+						}
 					}
 				}
 			}

@@ -174,6 +174,18 @@ class Client
         socketController.sendAll obj
         console.log "moving"
 
+    fire: (data)->
+        sprite = spriteList.get data.id
+        #console.log "sprite: #{sprite}"
+        obj =
+            uid: data.uid
+            id: data.id
+            eid: data.eid
+            command: 'fire'
+            text: 'firing'
+        socketController.sendAll obj
+        console.log "firing"
+
 
 
 
