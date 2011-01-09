@@ -46,6 +46,10 @@ body{font-family:Arial, Helvetica, sans-serif;}
 .selectedUnit{
 	outline: 1px red solid;
 }
+
+.selectedUnitOther{
+	outline: 1px blue solid;
+}
 </style>
 <title>WebSockets Client</title>
 

@@ -3,18 +3,40 @@
 		UnitList = Backbone.Collection.extend({
 
 			removeAll: function(){
-				console.log('removing all: ' + list.length);
-				list.each(function(e){
-				console.log('removing: '+e.id);
-					list.remove(e, {silent: true});
-					list.trigger('remove:'+e.id);
+				console.log('removing all: ' + unitList.length);
+				unitList.each(function(e){
+					console.log('removing: '+e.id);
+					unitList.remove(e, {silent: true});
+					unitList.trigger('remove:'+e.id);
 				});
 			}
 
 		});
 		//_.bindAll(UnitList);
-		list = new UnitList();
-		list.bind('removeAll', list.removeAll);
+		unitList = new UnitList();
+		unitList.bind('removeAll', unitList.removeAll);
+
+
+
+
+
+
+
+		ProjectileList = Backbone.Collection.extend({
+
+			removeAll: function(){
+				console.log('removing all: ' + projectileList.length);
+				projectileList.each(function(e){
+					console.log('removing: '+e.id);
+					projectileList.remove(e, {silent: true});
+					projectileList.trigger('remove:'+e.id);
+				});
+			}
+
+		});
+		//_.bindAll(UnitList);
+		projectileList = new ProjectileList();
+		projectileList.bind('removeAll', projectileList.removeAll);
 
 
 
@@ -69,7 +91,7 @@
 				var img = this.getImg();
 				$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/'+img+'" /></div>');
 				console.log('creating model');
-				list.add(this);
+				unitList.add(this);
 				new UnitView({model: this, el: $('#'+name)});
 			},
 
@@ -163,6 +185,52 @@
 
 
 
+		Projectile = Backbone.Model.extend({
+
+			initialize: function(attributes) {
+				this.set(attributes);
+				var name = this.getName();
+				//$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.get('y')+'px; left:'+this.get('x')+'px;"><img src="client/images/fusion.big.0.png" /></div>');
+				console.log('creating projectile');
+				projectileList.add(this);
+				new ProjectileView({model: this});
+			},
+
+			getName: function(){
+				var time = new Date().getTime();
+
+				var name = 'projectile' + this.id + time;
+
+				return name;
+
+			},
+
+			sendMoveResponse: function(){
+				var x = this.get('x');
+				var y = this.get('y');
+				var id = this.id;
+				var uid = this.get('uid');
+				var msg = '{"action":"move", "x":'+x+', "y":'+y+', "id":'+id+', "uid": '+uid+'}';
+				//socketController.send(msg);
+			},
+		});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -180,15 +248,19 @@
 			  	var ev = {'mousedown': 'select'};
 			  	this.handleEvents(ev);
 			  	this.model.bind('change:selected', this.toggleSelected);
+		  		this.createEvents({'keydown':'fireProjectile'}, 'document');
 		  	}else{
 			  	this.model.bind('moveUnit', this.moveThem);
 		  	}
-			list.bind('remove:'+this.model.id, this.remove);
+			//unitList.bind('remove:'+this.model.id, this.remove);
+
+
+			//document.onkeydown = this.fireProjectile;
 
 		  },
 
 		  events: {
-		    "mousedown":          "moveMe"
+		    "mousedown": "moveMe"
 		  },
 
 
@@ -200,10 +272,13 @@
 
 		  toggleSelected: function(){
 		  	var selected = this.model.isSelected();
-		  	if(selected == 0){
-		  		this.el.removeClass('selectedUnit');
+		  	var name = 'selectedUnit';
+		  	if(!this.model.isMe()){
+		  		name = name + 'Other';
+		  	}if(selected == 0){
+		  		this.el.removeClass(name);
 		  	}else{
-		  		this.el.addClass('selectedUnit');
+		  		this.el.addClass(name);
 		  	}
 		  },
 
@@ -235,7 +310,7 @@
 		  	return this;
 		  },
 
-			createEvents : function(events) {
+			createEvents : function(events, el) {
 			  // Cached regex to split keys for `handleEvents`.
 			  var eventSplitter = /^(\w+)\s*(.*)$/;
 			  //$(this.el).unbind();
@@ -245,17 +320,22 @@
 			    var match = key.match(eventSplitter);
 			    var eventName = match[1], selector = match[2];
 			    var method = _.bind(this[methodName], this);
+			    el = el || '#canvas';
 			    if (selector === '' || eventName == 'change') {
-			      $('#canvas').bind(eventName, method);
+			    	if(el === 'document'){
+			    		$(document).bind(eventName, method);
+			    	}else{
+			    		$(el).bind(eventName, method);
+			    	}
 			    } else {
-			      $('#canvas').delegate(selector, eventName, method);
+			      $(el).delegate(selector, eventName, method);
 			    }
 			  }
 			  return this;
 			},
 
 		  moveMe: function(e){
-		  	if(e.which != 3 || !this.model.isSelected()){
+		  	if(e.which == 1 || e.which == 2 || !this.model.isSelected()){
 		  		console.log('not moving!');
 		  		return this;
 		  	}
@@ -275,19 +355,125 @@
 			this.model.set({x:dx, y:dy});
 			this.model.save();
 
-			this.el.stop();
+			//this.el.stop();
 
 			this.el.animate({
 				top: this.model.get('y'),
 				left: this.model.get('x')
 			},
-			time,
-			'linear');
+			{queue:false, duration:time, easing: 'linear'});
+		  },
+
+		  fireProjectile: function(e){
+		  	if(!this.model.isSelected()){
+		  		console.log('not firing!');
+		  		return this;
+		  	}
+		  	console.log(e);
+
+			var x, y, dx, dy;
+			dx = 100;
+			dy = 100;
+
+			//x = this.model.get('x');
+			//y = this.model.get('y');
+
+			//'top:'+this.get('y')+'px; left:'+this.get('x')
+
+			x = this.el.css('left').split('px')[0];
+			y = this.el.css('top').split('px')[0];
+			console.log('getting x,y '+ x + ' ' + y);
+
+
+			var obj = {x: x, y: y, dx: dx, dy: dx, id: this.model.id};
+			new Projectile(obj);
+
 		  },
 
 		  remove: function(){
 		  	this.el.remove();
 		  	this.model.destroy();
+		  	delete this.model;
+		  }
+
+		});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		var ProjectileView = Backbone.View.extend({
+		  initialize: function() {
+		  	console.log('projectile view init');
+
+			var name = this.model.getName();
+			$('#canvas').append('<div id = "'+name+'" style="position:absolute; top:'+this.model.get('y')+'px; left:'+this.model.get('x')+'px;"><img src="client/images/fusion.big.0.png" /></div>');
+			this.el = $('#'+name);
+
+  			_.bindAll(this, 'move', 'remove');
+		  	this.model.view = this;
+
+		  	this.move();
+
+		  },
+
+		  move: function() {
+			console.log('firing!');
+
+			var dx = this.model.get('dx');
+			var dy = this.model.get('dy');
+
+			var distance = Math.sqrt( Math.pow(dx - this.model.get('x'), 2) + Math.pow(dy - this.model.get('y'), 2)  );
+
+			var time = 1 * distance;
+			//time = 1000;
+
+			//		console.log(distance + ' ' + dy + ' ' + this.model.get('y'));
+			this.model.set({x:dx, y:dy}, {silent: true});
+			//this.model.save();
+
+			console.log('rendering to:'+this.model.get('x') +', ' + this.model.get('y'));
+
+
+			this.el.animate({
+				top: this.model.get('dy'),
+				left: this.model.get('dx')
+			},
+			{duration:time, easing: 'linear', complete: this.remove});
+
+		  	return this;
+		  },
+
+
+		  remove: function(){
+		  	this.el.remove();
+		  	this.model.destroy();
+		  	delete this.model;
 		  }
 
 		});
@@ -368,7 +554,8 @@
 		},
 
 		onclose : function(){
-			list.trigger('removeAll');
+			unitList.trigger('removeAll');
+			projectileList.trigger('removeAll');
 			this.isConnected = false;
 			this.message('<p class="event bad">Socket Status: (Closed)'+'</p>');
 		},
@@ -387,19 +574,19 @@
 
 			if(msg.command == 'close'){
 					console.log('CLOSING uid: ' + uid);
-					var to_remove = list.select(function(e){
+					var to_remove = unitList.select(function(e){
 						return e.get('uid') == uid;
 					});
 
 					_.each(to_remove, function(e){
-						list.remove(e, {silent: true});
-						list.trigger('remove:'+e.id);
+						unitList.remove(e, {silent: true});
+						unitList.trigger('remove:'+e.id);
 					});
 			}else if(msg.command == 'init'){
 				var uid = {uid: msg.uid};
 				client = new Client(uid);
 			}else{
-				var e = list.get(id);
+				var e = unitList.get(id);
 				if(msg.command == 'create'){
 					if(!e){
 						console.log(msg.command);
@@ -472,7 +659,7 @@
 	$('#disconnect').bind('click', function(){socketController.close();});
 	$('#connect').bind('click', function(){socketController.connect();});
 	$('#unselect').bind('click', function(){
-		list.each(function(model){
+		unitList.each(function(model){
 			if(model.isMe()){
 				model.set({'selected':0});
 			}
