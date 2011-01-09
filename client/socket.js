@@ -251,7 +251,7 @@
 			  	var ev = {'mousedown': 'select'};
 			  	this.handleEvents(ev);
 			  this.model.bind('change:selected', this.toggleSelected);
-			//unitList.bind('remove:'+this.model.id, this.remove);
+			unitList.bind('remove:'+this.model.id, this.remove);
 
 
 

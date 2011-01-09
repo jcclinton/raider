@@ -44,6 +44,44 @@ class Hash
 
 
 
+class Instances extends Hash
+    constructor: ->
+        @clientList = new Clients
+        @spriteList = new Sprites
+        super()
+    add: (sessionId, clientSocket) ->
+        id = new Date().getTime()
+        console.log "adding instance with uid: #{id}"
+        instance = new Instance id
+        console.log "adding instance: #{instance}"
+        super id, instance
+        @clientList.add sessionId, clientSocket
+        @id = id
+    remove: (uid) ->
+        #console.log "removing instance with uid: #{uid}"
+
+        #remove all units with this uid
+        clients = clientList.getAll()
+        for id of clients
+            client = @clientList.get id
+            @clientList.remove id if client.getUid() is uid
+        obj =
+            uid: uid
+            command: 'close'
+            text: 'instance closed'
+        client = @clientList.get uid
+        #socketController.sendAll obj, uid
+        super uid
+    get: (uid) ->
+        #console.log "getting instances with id: #{id}"
+        super uid
+    getAll: ->
+        #console.log "getting all instances"
+        super()
+
+
+
+
 
 
 
@@ -51,20 +89,15 @@ class Clients extends Hash
     add: (uid, clientSocket) ->
         #console.log "adding client with uid: #{uid}"
         client = new Client uid, clientSocket
+        console.log "adding client: #{client}"
         super uid, client
     remove: (uid) ->
         #console.log "removing client with uid: #{uid}"
-
-        #remove all units with this uid
-        sprites = spriteList.getAll()
-        for id of sprites
-            sprite = spriteList.get id
-            spriteList.remove id if sprite.getUid() is uid
         obj =
             uid: uid
             command: 'close'
             text: 'user dropped'
-        client = clientList.get uid
+        client = this.get uid
         socketController.sendAll obj, uid
         super uid
     get: (uid) ->
@@ -74,7 +107,6 @@ class Clients extends Hash
         #console.log "getting all clients"
         super()
 
-clientList = new Clients
 
 
 
@@ -92,11 +124,23 @@ class Sprites extends Hash
     constructor: ->
         @index = 0
         super()
-    add: (uid) ->
+    add: (uid, team) ->
         #console.log "adding sprite with id: #{uid}"
         @index++
-        sprite = new Sprite uid, @index
+        sprite = new Sprite uid, @index, team
+
+        obj =
+            uid: sprite.uid
+            id: sprite.id
+            x: sprite.x
+            y: sprite.y
+            team: sprite.team
+            command: 'create'
+            text: 'create new object'
+        socketController.sendAll obj
+
         id = sprite.getId()
+        console.log "adding sprite: #{sprite}"
         super id, sprite
     get: (id) ->
         #console.log "getting sprite with id: #{id}"
@@ -107,8 +151,15 @@ class Sprites extends Hash
     getAll: ->
         #console.log "getting all sprites"
         super()
+    removeAllOfUser: (uid) ->
+        #console.log "removing sprites with uid: #{uid}"
 
-spriteList = new Sprites
+        #remove all units with this uid
+        sprites = this.getAll()
+        for id of sprites
+            sprite = this.get id
+            this.remove id if sprite.getUid() is uid
+
 
 
 
@@ -145,6 +196,23 @@ jsonController =
 
 
 
+###
+instance class for storing instance info
+###
+class Instance
+    constructor: (@instanceId) ->
+        @instanceId
+
+    add: ->
+        instanceList.add @instanceId
+        console.log "adding instance (in instance.add)"
+
+
+
+
+
+
+
 
 ###
 client class for storing client info
@@ -156,11 +224,11 @@ class Client
     getTeam: ->
         @team
 
-    add: ->
-        spriteList.add @uid
+    add: (data, spriteList)->
+        spriteList.add @uid, @team
         console.log "adding sprite (in client.add)"
 
-    move: (data)->
+    move: (data, spriteList)->
         sprite = spriteList.get data.id
         #console.log "sprite: #{sprite}"
         sprite.move data
@@ -175,8 +243,6 @@ class Client
         console.log "moving"
 
     fire: (data)->
-        sprite = spriteList.get data.id
-        #console.log "sprite: #{sprite}"
         obj =
             uid: data.uid
             id: data.id
@@ -198,7 +264,7 @@ class Client
 sprite class for storing sprite info
 ###
 class Sprite
-    constructor: (@uid, @id) ->
+    constructor: (@uid, @id, @team) ->
         #initial positioning:
         modulo = (@uid %2) == 0
         max = 400
@@ -212,17 +278,8 @@ class Sprite
         @x = @x - (Math.floor @x/max)*max if @x > max
         @y = @y - (Math.floor @y/max)*max if @y > max
 
-        client = clientList.get @uid
-        @team = client.getTeam()
-        obj =
-            uid: @uid
-            id: @id
-            x: @x
-            y: @y
-            command: 'create'
-            text: 'create new object'
-            team: @team
-        socketController.sendAll obj
+        #client = clientList.get @uid
+        #@team = client.getTeam()
         console.log "adding sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
     move: (data) ->
@@ -253,21 +310,24 @@ begin listening for websockets
 class SocketController
     constructor: ->
         @masterSocket = io.listen server
-        @masterSocket.on 'connection', (clientSocket) ->
+        @instanceList = new Instances
+        @masterSocket.on 'connection', (clientSocket) =>
             #console.log clientSocket
-            clientList.add clientSocket.sessionId, clientSocket
+            @instanceList.add clientSocket.sessionId, clientSocket
+            #clientList.add clientSocket.sessionId, clientSocket
 
-            clientSocket.on 'message', (data) ->
+            clientSocket.on 'message', (data) =>
                 console.log "<<< receiving #{data}"
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
-                client = clientList.get uid
+                client = @instanceList.clientList.get uid
                 #console.log client if client?
-                (client[action])(obj) if client?
+                (client[action])(obj, @instanceList.spriteList) if client?
                 #console.log "ran command: #{action}"
-            clientSocket.on 'disconnect', ->
-                clientList.remove clientSocket.sessionId
+            clientSocket.on 'disconnect', =>
+                @instanceList.clientList.remove clientSocket.sessionId
+                @instanceList.spriteList.removeAllOfUser clientSocket.sessionId
                 console.log 'disconnecting'
 
             #send init function to this client to initialize interface
@@ -278,9 +338,9 @@ class SocketController
             socketController.send clientSocket, obj
 
             #send all existing sprites to the new client
-            sprites = spriteList.getAll()
+            sprites = @instanceList.spriteList.getAll()
             for id of sprites
-                sprite = spriteList.get id
+                sprite = @instanceList.spriteList.get id
                 obj =
                     command: 'create'
                     uid: sprite.getUid()
@@ -297,14 +357,17 @@ class SocketController
         clientSocket.send msg
         console.log ">>> sending to uid: #{clientSocket.sessionId} #{msg}"
 
-    sendAll: (data, excludeUid) ->
-        clients = clientList.getAll()
+    sendAll: (data, excludeUid) =>
+        clients = @instanceList.clientList.getAll()
         #console.log clients
         for uid of clients
-            client = clientList.get uid
+            client = @instanceList.clientList.get uid
             socketController.send client.clientSocket, data if not excludeId? or excludeId? and excludeUid isnt uid
             #console.log "client: #{client.clientSocket}"
 
 
 
+#instanceList = new Instances
+#clientList = new Clients
+#spriteList = new Sprites
 socketController = new SocketController()
