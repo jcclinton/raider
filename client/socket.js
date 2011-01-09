@@ -245,17 +245,16 @@
 		  	this.model.view = this;
 		  	if(this.model.isMe()){
 		  		this.createEvents();
-			  	var ev = {'mousedown': 'select'};
-			  	this.handleEvents(ev);
-			  	this.model.bind('change:selected', this.toggleSelected);
 		  		this.createEvents({'keydown':'fireProjectile'}, 'document');
 		  	}else{
 			  	this.model.bind('moveUnit', this.moveThem);
 		  	}
+			  	var ev = {'mousedown': 'select'};
+			  	this.handleEvents(ev);
+			  this.model.bind('change:selected', this.toggleSelected);
 			//unitList.bind('remove:'+this.model.id, this.remove);
 
 
-			//document.onkeydown = this.fireProjectile;
 
 		  },
 
@@ -335,7 +334,7 @@
 			},
 
 		  moveMe: function(e){
-		  	if(e.which == 1 || e.which == 2 || !this.model.isSelected()){
+		  	if(e.which == 1 || e.which == 2 || !this.model.isSelected() || !this.model.isMe()){
 		  		console.log('not moving!');
 		  		return this;
 		  	}
@@ -374,6 +373,15 @@
 			var x, y, dx, dy;
 			dx = 100;
 			dy = 100;
+
+			var enemy = unitList.find(function(unit){
+				return !unit.isMe() && unit.isSelected();
+			});
+
+			if(enemy){
+				dx = enemy.get('x');
+				dy = enemy.get('y');
+			}
 
 			//x = this.model.get('x');
 			//y = this.model.get('y');
@@ -660,9 +668,7 @@
 	$('#connect').bind('click', function(){socketController.connect();});
 	$('#unselect').bind('click', function(){
 		unitList.each(function(model){
-			if(model.isMe()){
-				model.set({'selected':0});
-			}
+			model.set({'selected':0});
 		});
 	});
 
