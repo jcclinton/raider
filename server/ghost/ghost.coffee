@@ -58,11 +58,8 @@ class Instances extends Hash
 
 
 class Clients extends Hash
-    add: (uid, clientSocket) ->
-        console.log "adding client with uid: #{uid}"
-        client = new Client uid, clientSocket
-        super uid, client
-        client
+    add: (client) ->
+        super client.uid, client
     remove: (uid) ->
         #console.log "removing client with uid: #{uid}"
         obj =
@@ -196,6 +193,23 @@ class Instance
         @spriteList = new Sprites
         @instanceId
 
+    addClient: (client) ->
+        @clientList.add client
+
+        #send all existing sprites to the new client
+        sprites = @spriteList.getAll()
+        for id of sprites
+            sprite = @spriteList.get id
+            data =
+                command: 'create'
+                uid: sprite.getUid()
+                id: sprite.getId()
+                text: 'initially create other objects'
+                x: sprite.getX()
+                y: sprite.getY()
+                team: sprite.getTeam()
+            client.send data
+
     sendAll: (data, excludeUid) =>
         clients = @clientList.getAll()
         #console.log clients
@@ -203,11 +217,6 @@ class Instance
             client = @clientList.get uid
             client.send data if not excludeId? or excludeId? and excludeUid isnt uid
             #console.log "client: #{client.clientSocket}"
-
-    add: (sessionId, clientSocket) ->
-        @clientList.add sessionId, clientSocket
-        instanceList.add @instanceId
-        console.log "adding instance (in instance.add)"
 
 
 
@@ -220,14 +229,20 @@ class Instance
 client class for storing client info
 ###
 class Client
-    constructor: (@uid, @clientSocket) ->
+    constructor: (@clientSocket) ->
+        @uid = @clientSocket.sessionId
         @team = if @uid % 2 == 0 then 'light' else 'dark'
+        @instance = null
 
     send: (data) ->
         msg = jsonController.makeResponse data, @clientSocket.sessionId
         console.log ">>> sending to uid: #{@clientSocket.sessionId} #{msg}"
         @clientSocket.send msg
         false
+    addInstance: (instance) ->
+        @instance = instance
+    getInstance: ->
+        @instance
 
     getTeam: ->
         @team
@@ -333,11 +348,8 @@ class SocketController
         instance = @instanceList.get instanceId
 
         @masterSocket.on 'connection', (clientSocket) =>
-            #console.log clientSocket
 
-
-
-            client = instance.clientList.add clientSocket.sessionId, clientSocket
+            client = new Client clientSocket
 
             #send init function to this client to initialize interface
             data =
@@ -346,19 +358,10 @@ class SocketController
                 text: 'initializing new client'
             client.send data
 
-            #send all existing sprites to the new client
-            sprites = instance.spriteList.getAll()
-            for id of sprites
-                sprite = instance.spriteList.get id
-                data =
-                    command: 'create'
-                    uid: sprite.getUid()
-                    id: sprite.getId()
-                    text: 'initially create other objects'
-                    x: sprite.getX()
-                    y: sprite.getY()
-                    team: sprite.getTeam()
-                client.send data
+
+            instance.addClient client
+
+            client.addInstance instance
 
 
             clientSocket.on 'message', (data) =>
@@ -366,13 +369,18 @@ class SocketController
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
-                client = instance.clientList.get uid
+                #client = instance.clientList.get uid
                 #console.log client if client?
-                retData = (client[action])(obj, instance.spriteList) if client?
-                if retData
-                    clients = instance.clientList.getAll()
-                    for clientId, otherClient of clients
-                        otherClient.send retData
+
+                inst = client.getInstance()
+
+                if(inst)
+                    retData = (client[action])(obj, inst.spriteList) if client?
+                    if retData
+                        clients = inst.clientList.getAll()
+                        for clientId, otherClient of clients
+                            otherClient.send retData
+
 
                 #console.log "ran command: #{action}"
 

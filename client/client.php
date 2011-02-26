@@ -13,6 +13,23 @@ $(document).ready(function() {
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
 	}else{
 		//The user has WebSockets
+
+		var init = 0;
+		var el = $('a', '#link_wrapper');
+		el.each(function(index){
+			$(this).bind('click', function(){
+				if(init == 0){
+					order66(index);
+					init = 1;
+				}
+
+				$('#link_canvas').hide();
+				$('#canvas').show();
+				$('#wrapper').show();
+				$('#container').prepend('<p>index: '+index+'</p>');
+				return false;
+			});
+		});
 	}
 });
 </script>
@@ -50,30 +67,50 @@ body{font-family:Arial, Helvetica, sans-serif;}
 .selectedUnitOther{
 	outline: 1px blue solid;
 }
+
+.game_board{
+	outline:1px solid black;
+	height:400px;
+	width:400px;
+	position:relative;
+}
 </style>
 <title>WebSockets Client</title>
 
 </head>
 <body>
-	<!--canvas id="canvas" width="400" height="400" style="outline: 1px solid black"></canvas-->
-	<div id="canvas" class="fl" style="outline:1px solid black; height:400px; width:400px; position:relative;"></div>
+	<div id="canvas" class="fl game_board" style="display:none;"></div>
+	<div id="link_canvas" class="fl game_board">
+		<div id="link_wrapper" style="padding-left: 20px;">
+			<?php
+				for($i = 0; $i < 5; $i++){
+			?>
+				<div style="padding-top: 10px;">
+					<a href="#" id="link<?=$i?>"><?='CLICK '.$i?></a>
+				</div>
 
-	<div id="wrapper">
-
-  	<div id="container" class="fl">
-
-    	<h1>WebSockets Client</h1>
-        <button id="disconnect">Disconnect</button>
-        <button id="connect">Connect</button>
-        <button id="unselect">Unselect all</button>
-        <button id="add">Add Unit</button>
-
-        <div id="chatLog">
-
-        </div>
-
+			<?php
+			}
+			?>
+		</div>
 	</div>
-	<div style="clear:both;"></div>
+
+	<div id="wrapper" style="display:none;">
+
+	  	<div id="container" class="fl">
+
+	    	<h1>WebSockets Client</h1>
+	        <button id="disconnect">Disconnect</button>
+	        <button id="connect">Connect</button>
+	        <button id="unselect">Unselect all</button>
+	        <button id="add">Add Unit</button>
+
+	        <div id="chatLog">
+
+	        </div>
+
+		</div>
+		<div style="clear:both;"></div>
 	<div>
 </body>
 <script src="client/socket.js"></script>

@@ -1,4 +1,4 @@
-
+var order66 = function(index){
 
 		UnitList = Backbone.Collection.extend({
 
@@ -694,3 +694,5 @@
 
 
  $('#canvas').bind("contextmenu", function(e){ return false; });
+
+}
