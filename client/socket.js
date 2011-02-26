@@ -550,7 +550,7 @@ var order66 = function(instanceIndex){
 		},
 
 		close : function(){
-			//this.socket.close();
+			this.socket.disconnect();
 			console.log('uhhhh closing?');
 		},
 
@@ -678,7 +678,7 @@ var order66 = function(instanceIndex){
 
 	socketController.connect();
 	$('#disconnect').bind('click', function(){socketController.close();});
-	$('#connect').bind('click', function(){socketController.connect();});
+	//$('#connect').bind('click', function(){socketController.connect();});
 	$('#unselect').bind('click', function(){
 		unitList.each(function(model){
 			model.set({'selected':0});

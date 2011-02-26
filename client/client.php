@@ -45,6 +45,8 @@ body{font-family:Arial, Helvetica, sans-serif;}
 #chatLog{
 	padding:5px;
 	border:1px solid black;
+	height: 300px;
+	overflow: scroll;
 }
 #chatLog p{margin:0;}
 .event{color:#999;}
@@ -99,11 +101,12 @@ body{font-family:Arial, Helvetica, sans-serif;}
 
 	  	<div id="container" class="fl">
 
-	    	<h1>WebSockets Client</h1>
+	    	<h1>Client</h1>
 	        <button id="disconnect">Disconnect</button>
-	        <button id="connect">Connect</button>
+	        <!--button id="connect">Connect</button-->
 	        <button id="unselect">Unselect all</button>
 	        <button id="add">Add Unit</button>
+	        <a href="#" onclick="$('#chatLog').empty(); return false;" >clear chat</a>
 
 	        <div id="chatLog">
 
