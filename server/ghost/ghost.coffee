@@ -24,8 +24,8 @@ class Hash
 
 
 class Instances extends Hash
-    add: () ->
-        id = new Date().getTime()
+    add: (id) ->
+        #id = new Date().getTime()
         console.log "adding instance with uid: #{id}"
         instance = new Instance id
         super id, instance
@@ -239,7 +239,15 @@ class Client
         console.log ">>> sending to uid: #{@clientSocket.sessionId} #{msg}"
         @clientSocket.send msg
         false
-    addInstance: (instance) ->
+    addInstance: (iId) ->
+        instance = instanceList.get iId
+        if not instance
+            instanceList.add iId
+            instance = instanceList.get iId
+
+
+        console.log "attaching to instance: #{iId}"
+        instance.addClient this
         @instance = instance
     getInstance: ->
         @instance
@@ -281,6 +289,11 @@ class Client
             eid: data.eid
             command: 'fire'
             text: 'firing'
+
+    attachInstance: (data)->
+        console.log "adding #{@uid} to instance #{data.iId}"
+        this.addInstance data.iId
+
 
 
 
@@ -340,12 +353,11 @@ begin listening for websockets
 class SocketController
     constructor: (server, io, options)->
         @masterSocket = io.listen server
-        @instanceList = new Instances
 
 
         #hack to get instance initialized
-        instanceId = @instanceList.add()
-        instance = @instanceList.get instanceId
+        #instanceId = @instanceList.add()
+        #instance = @instanceList.get instanceId
 
         @masterSocket.on 'connection', (clientSocket) =>
 
@@ -358,43 +370,39 @@ class SocketController
                 text: 'initializing new client'
             client.send data
 
-
-            instance.addClient client
-
-            client.addInstance instance
-
-
             clientSocket.on 'message', (data) =>
                 console.log "<<< receiving #{data}"
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
-                #client = instance.clientList.get uid
-                #console.log client if client?
 
                 inst = client.getInstance()
 
                 if(inst)
-                    retData = (client[action])(obj, inst.spriteList) if client?
+                    retData = (client[action])(obj, inst.spriteList)
                     if retData
                         clients = inst.clientList.getAll()
                         for clientId, otherClient of clients
                             otherClient.send retData
+                else if action == 'instance'
+                    client.attachInstance(obj)
 
 
                 #console.log "ran command: #{action}"
 
             clientSocket.on 'disconnect', =>
-                instance.clientList.remove clientSocket.sessionId
-                instance.spriteList.removeAllOfUser clientSocket.sessionId
+                inst = client.getInstance()
+                inst.clientList.remove clientSocket.sessionId if inst?
+                inst.spriteList.removeAllOfUser clientSocket.sessionId if inst?
                 console.log 'disconnecting'
 
 
 
+instanceList = new Instances
 
 Ghost = (server, io, options) ->
+    #console.log 'running!!'
     socketController = new SocketController(server, io, options)
-    console.log 'running!!'
 
 
 exports.run = (server, io, options) ->

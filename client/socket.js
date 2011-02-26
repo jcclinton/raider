@@ -1,4 +1,4 @@
-var order66 = function(index){
+var order66 = function(instanceIndex){
 
 		UnitList = Backbone.Collection.extend({
 
@@ -584,8 +584,9 @@ var order66 = function(index){
 						unitList.trigger('remove:'+e.id);
 					});
 			}else if(msg.command == 'init'){
-				var uid = {uid: msg.uid};
-				client = new Client(uid);
+				client = new Client({uid: msg.uid});
+				var msg = '{"action":"instance", "iId":'+instanceIndex+', "uid": '+uid+'}';
+				socketController.send(msg);
 			}else{
 				var e = unitList.get(id);
 				if(msg.command == 'create'){
