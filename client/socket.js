@@ -516,28 +516,10 @@ var order66 = function(instanceIndex){
 
 	var socketController = {
 		connect : function(){
-				//var host = "ws://localhost:8000/php2d/server/startDaemon.php";
-				var host = "ws://65.49.73.225:8000";
+				var host = '65.49.73.225';
+				var options = {port: 8000};
 
-				/*try{
-					this.socket = new WebSocket(host);
-					this.message('<p class="event">Socket Status: '+this.socket.readyState+'</p>');
-					this.isConnected = true;
-
-					//assign out relevant functions
-					this.socket.onopen = this.open;
-					this.socket.onmessage = this.receive;
-					this.socket.onclose = this.onclose;
-
-				} catch(exception){
-					this.message('<p>Error'+exception+'</p>');
-					this.isConnected = false;
-				}*/
-
-
-
-
-				this.socket = new io.Socket('65.49.73.225', {port: 8000});
+				this.socket = new io.Socket(host, options);
 				this.socket.on('connect', this.open )
 				this.socket.on('message', this.receive )
 				this.socket.on('disconnect', this.onclose )
