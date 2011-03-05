@@ -27,6 +27,8 @@ ghost.run server, io
 
 
 
+
+
 ###
 sprite class for storing sprite info
 ###
@@ -46,7 +48,7 @@ class newSprite
         @x = @x - (Math.floor @x/max)*max if @x > max
         @y = @y - (Math.floor @y/max)*max if @y > max
 
-        console.log "adding NEW sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
+        #console.log "adding NEW sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
     move: (data) ->
         @x = data.x
@@ -64,6 +66,13 @@ class newSprite
         @team
 
 ghost.sprite newSprite
+
+
+
+
+
+
+
 
 
 Client = ghost.getClient()

@@ -1,9 +1,42 @@
+###
+custom logging wrapper around console.log
+###
+class consoleWrapper
+    constructor: ->
+        ###
+            levels:
+                0 - show nothing
+                1 - show essentials
+                2 - show everything
+        ###
 
+        #change this value to change logging level:
+        @level = 1
+
+        @maxLevel = 2
+        @minLevel = 0
+    log: (msg, level) ->
+        if(not _.isNumber(level) or level >= @maxLevel or level <= @minLevel)
+            this.log 'invalid number passed into custom logging'
+        else if (level <= @level)
+            this.log msg
+    setLevel: (level) ->
+        if( _.isNumber(level) and level <= @maxLevel and level >= @minLevel)
+            @level = level
+    setMaxLevel: (level) ->
+        if( _.isNumber(level) and level >= @minLevel)
+            @level = level
+    setMinLevel: (level) ->
+        if( _.isNumber(level) and level <= @maxLevel)
+            @level = level
+    log: (msg) ->
+        console.log msg
+logger = new consoleWrapper()
 
 ###
 container class for all clients
 ###
-class Hash
+class List
     constructor: ->
         @table = {}
 
@@ -23,10 +56,10 @@ class Hash
 
 
 
-class Instances extends Hash
+class Instances extends List
     add: (id) ->
         #id = new Date().getTime()
-        console.log "adding instance with uid: #{id}"
+        #console.log "adding instance with uid: #{id}"
         instance = new Instance id
         super id, instance
         @id = id
@@ -57,7 +90,7 @@ class Instances extends Hash
 
 
 
-class Clients extends Hash
+class Clients extends List
     add: (client) ->
         super client.uid, client
     remove: (uid) ->
@@ -90,7 +123,7 @@ class Clients extends Hash
 ###
 container class for all sprites
 ###
-class Sprites extends Hash
+class Sprites extends List
     constructor: ->
         @index = 0
         super()
@@ -149,7 +182,7 @@ jsonController =
     makeResponse:
         (obj, sending_uid) ->
             is_me = if sending_uid == obj.uid then 1 else 0
-            console.log "***no obj.uid provided!***" if not obj.uid?
+            logger.log "***no obj.uid provided!***", 1 if not obj.uid
             str = ''
             for key, value of obj
                 str = "#{str} #{key}:'#{value}', "
@@ -239,7 +272,7 @@ class Client
 
     send: (data) ->
         msg = jsonController.makeResponse data, @clientSocket.sessionId
-        console.log ">>> sending to uid: #{@clientSocket.sessionId} #{msg}"
+        logger.log ">>> sending to uid: #{@clientSocket.sessionId} #{msg}", 1
         @clientSocket.send msg
         false
     getInstance: ->
@@ -249,7 +282,7 @@ class Client
         @team
 
     attachToInstance: (data)->
-        console.log "adding #{@uid} to instance #{data.iId}"
+        logger.log "adding #{@uid} to instance #{data.iId}", 1
         iId = data.iId
         instance = instanceList.get iId
         if not instance
@@ -257,7 +290,7 @@ class Client
             instance = instanceList.get iId
 
 
-        console.log "attaching to instance: #{iId}"
+        #console.log "attaching to instance: #{iId}"
         instance.addClient this
         @instance = instance
 
@@ -275,7 +308,7 @@ sprite class for storing sprite info
 ###
 class Sprite
     constructor: (@uid, @id, @team) ->
-        console.log "warning: creating empty sprite"
+        logger.log "warning: creating empty sprite", 1
 
 
 
@@ -310,7 +343,7 @@ class SocketController
             client.send data
 
             clientSocket.on 'message', (data) =>
-                console.log "<<< receiving #{data}"
+                logger.log "<<< receiving #{data}", 1
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
@@ -333,7 +366,7 @@ class SocketController
                 inst = client.getInstance()
                 inst.clientList.remove clientSocket.sessionId if inst?
                 inst.spriteList.removeAllOfUser clientSocket.sessionId if inst?
-                console.log 'disconnecting'
+                logger.log 'disconnecting', 1
 
 
 
