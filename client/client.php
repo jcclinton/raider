@@ -77,7 +77,7 @@ body{font-family:Arial, Helvetica, sans-serif;}
 	position:relative;
 }
 </style>
-<title>WebSockets Client</title>
+<title>Ghost</title>
 
 </head>
 <body>
