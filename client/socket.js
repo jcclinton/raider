@@ -629,9 +629,7 @@ var order66 = function(instanceIndex){
 		},
 
 		getMessageObject : function(msg){
-			msg = "var obj = "+msg;
-			eval(msg);
-			return obj;
+			return $.parseJSON(msg);
 		},
 
 		message : function(msg, type){
@@ -669,7 +667,7 @@ var order66 = function(instanceIndex){
 
 	$('#add').bind('click', function(){
 		var uid = client.getUid();
-		var msg = '{action:"add", uid: '+uid+'}';
+		var msg = '{"action":"add", "uid": '+uid+'}';
 		socketController.send(msg);
 
 	});

@@ -17,9 +17,9 @@ class consoleWrapper
         @minLevel = 0
     log: (msg, level) ->
         if(not _.isNumber(level) or level >= @maxLevel or level <= @minLevel)
-            this.log 'invalid number passed into custom logging'
+            this.trueLog 'invalid number passed into custom logging'
         else if (level <= @level)
-            this.log msg
+            this.trueLog msg
     setLevel: (level) ->
         if( _.isNumber(level) and level <= @maxLevel and level >= @minLevel)
             @level = level
@@ -29,7 +29,7 @@ class consoleWrapper
     setMinLevel: (level) ->
         if( _.isNumber(level) and level <= @maxLevel)
             @level = level
-    log: (msg) ->
+    trueLog: (msg) ->
         console.log msg
 logger = new consoleWrapper()
 
@@ -185,11 +185,11 @@ jsonController =
             logger.log "***no obj.uid provided!***", 1 if not obj.uid
             str = ''
             for key, value of obj
-                str = "#{str} #{key}:'#{value}', "
-            "{status: 'success', #{str} is_me: #{is_me}}"
+                str = "#{str} \"#{key}\":\"#{value}\", "
+            "{\"status\": \"success\", #{str} \"is_me\": #{is_me}}"
     getObject:
         (msg) ->
-            eval "ret = #{msg}"
+            $.parseJSON msg
 
 
 
@@ -321,7 +321,7 @@ class Sprite
 begin listening for sockets
 ###
 class SocketController
-    constructor: (server, io, options)->
+    constructor: (server)->
         @masterSocket = io.listen server
 
 
@@ -369,16 +369,21 @@ class SocketController
                 logger.log 'disconnecting', 1
 
 
+###
+REQUIRED DEPENDENCIES
+###
+_ = require 'underscore'
+$ = require 'jquery'
+io = require 'socket.io'
+
 
 instanceList = new Instances
 
-_ = require '/home/public_html/65.49.73.225/public/underscore.js'
-
 Ghost =
     run:
-        (server, io, options) ->
+        (server) ->
             #console.log 'running!!'
-            socketController = new SocketController(server, io, options)
+            socketController = new SocketController(server, io)
     sprite:
         (newSprite) ->
             Sprite = newSprite

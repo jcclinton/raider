@@ -6,7 +6,6 @@ start http server
 ###
 
 http = require 'http'
-io = require '/home/jclinton/projects/socket.io'
 
 
 server = http.createServer (req, res) ->
@@ -19,10 +18,10 @@ server.listen PORT, IP_ADDRESS
 
 
 
-ghostLib = require '/home/public_html/65.49.73.225/public/server/ghost/ghost.coffee'
-ghost = ghostLib.getGhost
+ex = require '/home/public_html/65.49.73.225/public/server/ghost/ghost.coffee'
+ghost = ex.getGhost
 
-ghost.run server, io
+ghost.run server
 
 
 
