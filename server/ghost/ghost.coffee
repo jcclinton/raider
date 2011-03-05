@@ -234,6 +234,8 @@ class Client
                 # game specific here
         @team = if @uid % 2 == 0 then 'light' else 'dark'
         @instance = null
+    init: ->
+        true
 
     send: (data) ->
         msg = jsonController.makeResponse data, @clientSocket.sessionId
@@ -297,6 +299,8 @@ class SocketController
         @masterSocket.on 'connection', (clientSocket) =>
 
             client = new Client clientSocket
+            # init will hold any custom code by the end user to be run on client contsruction
+            client.init()
 
             #send init function to this client to initialize interface
             data =

@@ -46,9 +46,6 @@ class newSprite
         @x = @x - (Math.floor @x/max)*max if @x > max
         @y = @y - (Math.floor @y/max)*max if @y > max
 
-        @x = 0
-        @y = 0
-
         console.log "adding NEW sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
     move: (data) ->
@@ -70,6 +67,9 @@ ghost.sprite newSprite
 
 
 Client = ghost.getClient()
+
+Client::init = ->
+	true
 
 Client::add = (data, spriteList)->
     console.log "adding sprite (in client.add)"
