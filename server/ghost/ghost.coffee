@@ -372,12 +372,15 @@ class SocketController
 
                 inst = client.getInstance()
 
-                if(inst)
-                    retData = (client[action])(obj, inst.spriteList)
-                    if retData
-                        clients = inst.clientList.getAll()
-                        for clientId, otherClient of clients
-                            otherClient.send retData
+                if not _.isNull inst
+                    if not _.isFunction client[action]
+                        logger.log "WARNING: no action: '#{action}' in Client", 1
+                    else
+                        retData = (client[action])(obj, inst.spriteList)
+                        if retData
+                            clients = inst.clientList.getAll()
+                            for clientId, otherClient of clients
+                                otherClient.send retData
                 else if action == 'instance'
                     client.attachToInstance(obj)
 
