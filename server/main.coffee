@@ -1,19 +1,43 @@
-IP_ADDRESS = '65.49.73.225'
 PORT = 8000
-
-###
-start http server
-###
-
-http = require 'http'
+connect = require 'connect'
 
 
-server = http.createServer (req, res) ->
-    res.writeHead 200, {'Content-Type': 'text/html'}
-    console.log 'request served'
-    res.end "<h1>Welcome!</h1>"
+cookie_obj =
+    secret: 'darth vader'
+    cookie:
+        maxAge: 60000
 
-server.listen PORT, IP_ADDRESS
+server = connect(
+    connect.cookieParser(),
+    connect.session(cookie_obj),
+    connect.favicon(),
+    (req, res, next) ->
+        sess = req.session
+        id = req.sessionID
+        #console.log "key: #{JSON.stringify req.cookie}"
+        if (sess.views)
+            res.setHeader('Content-Type', 'text/html')
+            res.end('<p>views: ' + sess.views + '<br/><br/>for<br/><br/>' + id + '</p>')
+            sess.views++
+        else
+            sess.views = 1
+            #stays alive as long as the browser is open
+            sess.cookie.expires = false;
+            res.end('welcome to the session demo. refresh!')
+)
+
+server.listen(PORT)
+
+
+
+
+
+
+
+
+
+
+
 
 
 

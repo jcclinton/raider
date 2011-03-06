@@ -347,6 +347,14 @@ class SocketController
         @masterSocket = io.listen server
 
 
+
+        server.addListener 'request', (req, res) ->
+            if ('/favicon.ico' != req.url)
+                id = req.sessionID
+                #console.log "ZOMG: #{JSON.stringify req.cookie}"
+                console.log "ZOMG: #{id}"
+
+
         #hack to get instance initialized
         #instanceId = @instanceList.add()
         #instance = @instanceList.get instanceId
