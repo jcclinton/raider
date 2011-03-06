@@ -27,44 +27,37 @@ ghost.run server
 
 
 
+Sprite = ghost.getSprite()
 
-###
-sprite class for storing sprite info
-###
-class newSprite
-    constructor: (@uid, @id, @team) ->
-                # game specific here
-        #initial positioning:
-        modulo = (@uid %2) == 0
-        max = 400
-        dx = if modulo then 50 else 0
-        dy = if modulo then 0 else 50
-        base = 20
+Sprite::init = ->
+    #initial positioning:
+    modulo = (@uid %2) == 0
+    max = 400
+    dx = if modulo then 50 else 0
+    dy = if modulo then 0 else 50
+    base = 20
 
-        @x = base + dx * @id
-        @y = base + dy * @id
+    @x = base + dx * @id
+    @y = base + dy * @id
 
-        @x = @x - (Math.floor @x/max)*max if @x > max
-        @y = @y - (Math.floor @y/max)*max if @y > max
+    @x = @x - (Math.floor @x/max)*max if @x > max
+    @y = @y - (Math.floor @y/max)*max if @y > max
 
-        #console.log "adding NEW sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
+    #console.log "adding NEW sprite with uid: #{@uid} and id: #{@id} in sprite constructor"
 
-    move: (data) ->
-        @x = data.x
-        @y = data.y
-
-    getId: ->
-        @id
-    getX: ->
-        @x
-    getY: ->
-        @y
-    getUid: ->
-        @uid
-    getTeam: ->
-        @team
-
-ghost.sprite newSprite
+Sprite::move = (data) ->
+    @x = data.x if data.x?
+    @y = data.y if data.y?
+Sprite::getId = ->
+    @id
+Sprite::getX = ->
+    @x
+Sprite::getY = ->
+	@y
+Sprite::getUid = ->
+	@uid
+Sprite::getTeam = ->
+	@team
 
 
 
@@ -80,7 +73,7 @@ Client::init = ->
 	true
 
 Client::add = (data, spriteList)->
-    console.log "adding sprite (in client.add)"
+    ghost.log "adding sprite (in client.add)", 2
     sprite = spriteList.add @uid, @team
 
     obj =
@@ -95,7 +88,7 @@ Client::add = (data, spriteList)->
 Client::move = (data, spriteList)->
     sprite = spriteList.get data.id
     sprite.move data
-    console.log "moving"
+    ghost.log "moving", 2
     obj =
         uid: data.uid
         id: data.id
@@ -105,7 +98,7 @@ Client::move = (data, spriteList)->
         text: 'moving'
 
 Client::fire = (data)->
-    console.log "firing"
+    ghost.log "firing", 2
     obj =
         uid: data.uid
         id: data.id

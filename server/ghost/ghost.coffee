@@ -4,20 +4,28 @@ custom logging wrapper around console.log
 class consoleWrapper
     constructor: ->
         ###
-            levels:
-                0 - show nothing
-                1 - show essentials
-                2 - show everything
+        formats:
+            0 - shows json string as it is
+            1 - shows json string formatted neatly
+            2 - show both
         ###
+        @outputFormat = 1
 
+
+        ###
+        levels:
+            0 - show nothing
+            1 - show essentials
+            2 - show everything
+        ###
         #change this value to change logging level:
         @level = 1
 
         @maxLevel = 2
         @minLevel = 0
     log: (msg, level) ->
-        if(not _.isNumber(level) or level >= @maxLevel or level <= @minLevel)
-            this.trueLog 'invalid number passed into custom logging'
+        if(not _.isNumber(level) or level > @maxLevel or level < @minLevel)
+            this.trueLog "invalid number: #{level} passed into custom logging"
         else if (level <= @level)
             this.trueLog msg
     setLevel: (level) ->
@@ -30,8 +38,19 @@ class consoleWrapper
         if( _.isNumber(level) and level <= @maxLevel)
             @level = level
     trueLog: (msg) ->
-        console.log msg
-logger = new consoleWrapper()
+        if @outputFormat == 0
+            output = msg
+        else if @outputFormat is 1 or @outputFormat is 2
+            output = msg.replace(/"/g, '')
+            output = output.replace(/{/g, '\n\t')
+            output = output.replace(/\, /g, '\n\t')
+            output = output.replace(/}/g, '')
+
+        output = msg + '\n' + output if @outputFormat is 2
+
+        output = '\n' + output + '\n'
+
+        console.log output
 
 ###
 container class for all clients
@@ -131,6 +150,7 @@ class Sprites extends List
         #console.log "adding sprite with id: #{uid}"
         @index++
         sprite = new Sprite uid, @index, team
+        sprite.init()
 
         id = sprite.getId()
         super id, sprite
@@ -185,8 +205,8 @@ jsonController =
             logger.log "***no obj.uid provided!***", 1 if not obj.uid
             str = ''
             for key, value of obj
-                str = "#{str} \"#{key}\":\"#{value}\", "
-            "{\"status\": \"success\", #{str} \"is_me\": #{is_me}}"
+                str = "#{str} \"#{key}\":\"#{value}\","
+            "{\"status\": \"success\",#{str} \"is_me\": #{is_me}}"
     getObject:
         (msg) ->
             $.parseJSON msg
@@ -272,7 +292,7 @@ class Client
 
     send: (data) ->
         msg = jsonController.makeResponse data, @clientSocket.sessionId
-        logger.log ">>> sending to uid: #{@clientSocket.sessionId} #{msg}", 1
+        logger.log ">>>>>> sending to uid: #{@clientSocket.sessionId} #{msg}", 1
         @clientSocket.send msg
         false
     getInstance: ->
@@ -282,7 +302,7 @@ class Client
         @team
 
     attachToInstance: (data)->
-        logger.log "adding #{@uid} to instance #{data.iId}", 1
+        logger.log "adding #{@uid} to instance #{data.iId}", 2
         iId = data.iId
         instance = instanceList.get iId
         if not instance
@@ -308,7 +328,9 @@ sprite class for storing sprite info
 ###
 class Sprite
     constructor: (@uid, @id, @team) ->
-        logger.log "warning: creating empty sprite", 1
+        true
+    init: ->
+        true
 
 
 
@@ -343,7 +365,7 @@ class SocketController
             client.send data
 
             clientSocket.on 'message', (data) =>
-                logger.log "<<< receiving #{data}", 1
+                logger.log "<<< receiving from uid: #{client.uid} #{data}", 1
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
@@ -378,18 +400,23 @@ io = require 'socket.io'
 
 
 instanceList = new Instances
+logger = new consoleWrapper()
 
 Ghost =
     run:
         (server) ->
             #console.log 'running!!'
-            socketController = new SocketController(server, io)
-    sprite:
-        (newSprite) ->
-            Sprite = newSprite
+            socketController = new SocketController(server)
+    getSprite:
+        ->
+            Sprite
     getClient:
         ->
             Client
+    log:
+        (msg, level) ->
+            logger.log msg, level
+
 
 exports.getGhost = Ghost
 
