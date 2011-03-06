@@ -568,6 +568,23 @@ var order66 = function(instanceIndex){
 			}else if(msg.command == 'init'){
 				client = new Client({uid: msg.uid});
 				var msg = '{"action":"instance", "iId":'+instanceIndex+', "uid": '+uid+'}';
+
+				// do all bindings here since they dont make sense unless the client is initialized
+				$('#disconnect').bind('click', function(){socketController.close();});
+				//$('#connect').bind('click', function(){socketController.connect();});
+				$('#unselect').bind('click', function(){
+					unitList.each(function(model){
+						model.set({'selected':0});
+					});
+				});
+
+				$('#add').bind('click', function(){
+					var uid = client.getUid();
+					var msg = '{"action":"add", "uid": '+uid+'}';
+					socketController.send(msg);
+
+				});
+
 				socketController.send(msg);
 			}else{
 				var e = unitList.get(id);
@@ -657,20 +674,6 @@ var order66 = function(instanceIndex){
 
 
 	socketController.connect();
-	$('#disconnect').bind('click', function(){socketController.close();});
-	//$('#connect').bind('click', function(){socketController.connect();});
-	$('#unselect').bind('click', function(){
-		unitList.each(function(model){
-			model.set({'selected':0});
-		});
-	});
-
-	$('#add').bind('click', function(){
-		var uid = client.getUid();
-		var msg = '{"action":"add", "uid": '+uid+'}';
-		socketController.send(msg);
-
-	});
 
 
 
