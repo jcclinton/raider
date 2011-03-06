@@ -209,7 +209,7 @@ jsonController =
             "{\"status\": \"success\",#{str} \"is_me\": #{is_me}}"
     getObject:
         (msg) ->
-            $.parseJSON msg
+            JSON.parse msg
 
 
 
@@ -351,8 +351,7 @@ class SocketController
         server.addListener 'request', (req, res) ->
             if ('/favicon.ico' != req.url)
                 id = req.sessionID
-                #console.log "ZOMG: #{JSON.stringify req.cookie}"
-                console.log "ZOMG: #{id}"
+                #console.log "ZOMG: #{id}"
 
 
         #hack to get instance initialized
@@ -406,7 +405,7 @@ class SocketController
 REQUIRED DEPENDENCIES
 ###
 _ = require 'underscore'
-$ = require 'jquery'
+#$ = require 'jquery'
 io = require 'socket.io'
 
 

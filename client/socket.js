@@ -517,7 +517,7 @@ var order66 = function(instanceIndex){
 	var socketController = {
 		connect : function(){
 				var host = '65.49.73.225';
-				var options = {port: 8000};
+				var options = {port: 80};
 
 				this.socket = new io.Socket(host, options);
 				this.socket.on('connect', this.open )

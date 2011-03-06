@@ -1,5 +1,6 @@
-PORT = 8000
+PORT = 80
 connect = require 'connect'
+fs = require 'fs'
 
 
 cookie_obj =
@@ -14,16 +15,21 @@ server = connect(
     (req, res, next) ->
         sess = req.session
         id = req.sessionID
-        #console.log "key: #{JSON.stringify req.cookie}"
-        if (sess.views)
-            res.setHeader('Content-Type', 'text/html')
-            res.end('<p>views: ' + sess.views + '<br/><br/>for<br/><br/>' + id + '</p>')
-            sess.views++
+        if req.url == '/'
+            name = '/index.html'
         else
-            sess.views = 1
-            #stays alive as long as the browser is open
-            sess.cookie.expires = false;
-            res.end('welcome to the session demo. refresh!')
+            name = req.url
+        fs.readFile "/home/public_html/65.49.73.225/public#{name}", (err, page) ->
+            if not sess.views?
+                sess.views = 1
+                #stays alive as long as the browser is open
+                sess.cookie.expires = false
+                console.log "starting new session"
+                res.end page
+            else
+                res.setHeader 'Content-Type', 'text/html'
+                #console.log "continuing session"
+                res.end page
 )
 
 server.listen(PORT)
