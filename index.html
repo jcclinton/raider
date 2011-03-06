@@ -12,8 +12,18 @@ $(document).ready(function() {
 		$('#chatLog, input, button, #examples').fadeOut("fast");
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
 	}else{
-		//The user has WebSockets
+		// popuplate links
+		var link = $('#link_wrapper'), html;
 
+		for(var i = 0; i < 5; i++){
+			html = '<div style="padding-top: 10px;">'+
+						'<a href="#" id="link'+i+'">CLICK '+i+'</a>'+
+					'</div>';
+			link.append(html);
+		}
+
+
+		// bind links
 		var init = 0;
 		var el = $('a', '#link_wrapper');
 		el.each(function(index){
@@ -84,16 +94,6 @@ body{font-family:Arial, Helvetica, sans-serif;}
 	<div id="canvas" class="fl game_board" style="display:none;"></div>
 	<div id="link_canvas" class="fl game_board">
 		<div id="link_wrapper" style="padding-left: 20px;">
-			<?php
-				for($i = 0; $i < 5; $i++){
-			?>
-				<div style="padding-top: 10px;">
-					<a href="#" id="link<?=$i?>"><?='CLICK '.$i?></a>
-				</div>
-
-			<?php
-			}
-			?>
 		</div>
 	</div>
 

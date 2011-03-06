@@ -638,7 +638,7 @@ var order66 = function(instanceIndex){
 				msg = msg.text;
 				msg = '<p class="message">Received: ' + msg + '</p>';
 			}
-			$('#chatLog').append(msg);
+			$('#chatLog').prepend(msg+'<hr/>');
 		}
 	}
 	_.bindAll(socketController);
