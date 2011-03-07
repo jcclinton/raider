@@ -84,17 +84,8 @@ class Instances extends List
         @id = id
     remove: (uid) ->
         #console.log "removing instance with uid: #{uid}"
-
-        #remove all units with this uid
-        clients = clientList.getAll()
-        for id of clients
-            client = @clientList.get id
-            @clientList.remove id if client.getUid() is uid
-        obj =
-            uid: uid
-            command: 'close'
-            text: 'instance closed'
-        client = @clientList.get uid
+        instance = instanceList.get uid
+        instance.destruct()
         super uid
     get: (uid) ->
         #console.log "getting instances with id: #{id}"
@@ -244,6 +235,12 @@ class Instance
     constructor: (@instanceId) ->
         @clientList = new Clients
         @spriteList = new Sprites
+    destruct: ->
+        #remove all units with this uid
+        clients = @clientList.getAll()
+        for id of clients
+            client = @clientList.get id
+            @clientList.remove id if client.getUid() is uid
 
     addClient: (client) ->
         @clientList.add client
@@ -423,6 +420,9 @@ Ghost =
     getClient:
         ->
             Client
+    getInstanceList:
+        ->
+            instanceList
     log:
         (msg, level) ->
             logger.log msg, level

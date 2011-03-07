@@ -1,6 +1,13 @@
 PORT = 80
 connect = require 'connect'
 fs = require 'fs'
+url = require 'url'
+_ = require 'underscore'
+
+ex = require '/home/public_html/65.49.73.225/public/server/ghost/ghost.coffee'
+ghost = ex.getGhost
+instanceList = ghost.getInstanceList()
+instanceList.add 1
 
 
 cookie_obj =
@@ -15,20 +22,73 @@ server = connect(
     (req, res, next) ->
         sess = req.session
         id = req.sessionID
-        if req.url == '/'
+
+        ajax = false
+
+        path = url.parse req.url, true
+
+        #ghetto url handling
+        if path.pathname == '/'
             name = '/index.html'
+            type = 'text/html'
+        else if path.pathname == '/ajax.html'
+            name = '/ajax.html'
+            type = 'text/html'
+            ajax = true
         else
             name = req.url
-        fs.readFile "/home/public_html/65.49.73.225/public#{name}", (err, page) ->
-            if not sess.views?
-                sess.views = 1
-                #stays alive as long as the browser is open
-                sess.cookie.expires = false
-                console.log "starting new session"
-                res.end page
+            type = 'text/javascript'
+
+        if not sess.views?
+            sess.views = 1
+            #stays alive as long as the browser is open
+            sess.cookie.expires = false
+            console.log "starting new session on #{name}"
+        else
+            console.log "continuing session on #{name}"
+
+        res.setHeader 'Content-Type', type
+
+        if ajax
+            query = path.query
+            data = "status": "success"
+            console.log query
+
+            if query.action == "getInstanceList"
+                data["instanceList"] = instanceList.getAll()
+            else if query.action == "removeInstance"
+                id = parseInt query.instanceId
+                exists = instanceList.get id
+                if exists and _.isNumber id
+                    instanceList.remove id
+                    data["instanceId"] = id
+            else if query.action == "enterInstance"
+                id = parseInt query.instanceId
+                exists = instanceList.get id
+                if exists and _.isNumber id
+                    data["instanceId"] = id
+            else if query.action == "addInstance"
+                start = 0
+                while instanceList.get ++start
+                    id = start
+                id = start
+                exists = instanceList.get id
+                if not exists and _.isNumber id
+                    instanceList.add id
+                    data["instanceId"] = id
+            else if query.action == "leaveInstance"
+                id = parseInt query.instanceId
+                exists = instanceList.get id
+                if exists and _.isNumber id
+                    data["instanceId"] = id
             else
-                res.setHeader 'Content-Type', 'text/html'
-                #console.log "continuing session"
+                console.warn 'doh!'
+
+            str = JSON.stringify data
+            console.log "sending: #{str}"
+            res.end str
+        else
+            fs.readFile "/home/public_html/65.49.73.225/public#{name}", (err, page) ->
                 res.end page
 )
 
@@ -48,10 +108,8 @@ server.listen(PORT)
 
 
 
-ex = require '/home/public_html/65.49.73.225/public/server/ghost/ghost.coffee'
-ghost = ex.getGhost
 
-ghost.run server
+#ghost.run server
 
 
 

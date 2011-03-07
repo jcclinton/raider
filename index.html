@@ -4,42 +4,134 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 <script src="client/underscore.js"></script>
 <script src="client/backbone.js"></script>
+<script src="client/json.js"></script>
 <script src="http://cdn.socket.io/stable/socket.io.js"></script>
 <script type="text/javascript">
+lobby = {
+	create: function(){
+		//populate instance data
+		$.ajax({
+		  url: "/ajax.html?action=getInstanceList",
+		  success: function(data){
+		    console.log('initial ajax success: ' + data);
+			data = JSON.parse(data);
+			instanceList = data.instanceList;
+		    lobby.init(instanceList);
+		  }
+		});
+	},
+	init: function(instanceList){
+		var size = function(obj) {
+		    var size = 0, key;
+		    for (key in obj) {
+		        if (obj.hasOwnProperty(key)) size++;
+		    }
+		    return size;
+		};
+
+		// popuplate links
+		var link = $('#link_wrapper'), html, instanceList;
+
+		$('#link_wrapper').empty();
+
+		html = '<div style="padding-top: 10px;">'+
+					'<a href="/ajax.html?action=addInstance" precall="lobby.add.precall" callback="lobby.add.callback" class="ajax" id="add_link">Add instance</a>'+
+				'</div>';
+		link.append(html);
+
+		link.append('instances:<br/>');
+
+		amount = size(instanceList);
+
+		_.each(instanceList, function(key, instanceData){
+			i = key.instanceId;
+			lobby.addInstance(i);
+		});
+	},
+	addInstance: function(i){
+		var link = $('#link_wrapper');
+		var html;
+		html = '<div id="wrapper_'+i+'" style="padding-top: 10px;">'+
+					'<a href="/ajax.html?action=enterInstance&instanceId='+i+'" precall="lobby.enter.precall" callback="lobby.enter.callback" class="ajax" id="enter_link'+i+'">Enter Instance '+i+'</a><br/>'+
+					'<a href="/ajax.html?action=removeInstance&instanceId='+i+'" precall="lobby.remove.precall" callback="lobby.remove.callback" class="ajax" id="remove_link'+i+'">Remove Instance '+i+'</a>'+
+				'</div>';
+		link.append(html);
+	},
+	add: {
+		precall: function(target, data){
+			console.log('in precall with: ' + data);
+		},
+		callback: function(target, data){
+			var obj = $.parseJSON(data);
+			var id = obj.instanceId || null;
+			console.log('in callback with: ' + data);
+			if(id){
+				lobby.addInstance(id);
+			}
+		}
+	},
+	enter: {
+		precall: function(target, data){
+			console.log('in precall with: ' + data);
+		},
+		callback: function(target, data){
+			console.log('in callback with: ' + data);
+			var obj = $.parseJSON(data);
+			var id = obj.instanceId || null;
+			if(id){
+				$('#link_canvas').hide();
+				$('#canvas').show();
+				$('#wrapper').show();
+				var link = '<a href="/" instanceId="'+id+'" id="leave_link'+id+'">Leave Instance '+id+'</a>';
+				$('#container').prepend('<div id="canvas_id"><p>index: '+id+'</p><p>'+link+'</p></div>');
+				$('leave_link'+id).bind('click', function(){
+					lobby.leaveInstance($(this));
+				});
+
+			}
+		}
+	},
+	leaveInstance: function(el){
+		var id = parseInt(el.attr('istanceId')) || null;
+		if(id){
+			console.log('leaving instance ' + id);
+			$.ajax({
+			  url: '/ajax.html?action=leaveInstance&instanceId='+id,
+			  success: function(data){
+			    console.log('left instance ' + id);
+			  }
+			});
+		}
+	},
+	remove: {
+		precall: function(target, data){
+			console.log('in precall with: ' + data);
+		},
+		callback: function(target, data){
+			var obj = $.parseJSON(data);
+			var id = obj.instanceId || null;
+			console.log('in callback with: ' + data);
+			if(id){
+				$('#wrapper_'+id).remove();
+			}
+		}
+	}
+}
+
 $(document).ready(function() {
 
 	if(!("WebSocket" in window)){
 		$('#chatLog, input, button, #examples').fadeOut("fast");
 		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
 	}else{
-		// popuplate links
-		var link = $('#link_wrapper'), html;
 
-		for(var i = 0; i < 5; i++){
-			html = '<div style="padding-top: 10px;">'+
-						'<a href="#" id="link'+i+'">CLICK '+i+'</a>'+
-					'</div>';
-			link.append(html);
+		lobby.create();
+
+		var wrapper = function(index){
+			order66(index);
+			console.log('hitting link for index: ' + index);
 		}
-
-
-		// bind links
-		var init = 0;
-		var el = $('a', '#link_wrapper');
-		el.each(function(index){
-			$(this).bind('click', function(){
-				if(init == 0){
-					order66(index);
-					init = 1;
-				}
-
-				$('#link_canvas').hide();
-				$('#canvas').show();
-				$('#wrapper').show();
-				$('#container').prepend('<p>index: '+index+'</p>');
-				return false;
-			});
-		});
+		
 	}
 });
 </script>
@@ -116,5 +208,6 @@ body{font-family:Arial, Helvetica, sans-serif;}
 		<div style="clear:both;"></div>
 	<div>
 </body>
+<script src="client/button.js"></script>
 <script src="client/socket.js"></script>
 </html>
