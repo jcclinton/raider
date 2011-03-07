@@ -44,15 +44,13 @@ server = connect(
             #stays alive as long as the browser is open
             sess.cookie.expires = false
             console.log "starting new session on #{name}"
-        else
-            console.log "continuing session on #{name}"
 
         res.setHeader 'Content-Type', type
 
         if ajax
             query = path.query
             data = "status": "success"
-            console.log query
+            #console.log query
 
             if query.action == "getInstanceList"
                 data["instanceList"] = instanceList.getAll()
@@ -109,7 +107,7 @@ server.listen(PORT)
 
 
 
-#ghost.run server
+ghost.run server
 
 
 

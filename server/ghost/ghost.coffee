@@ -402,7 +402,6 @@ class SocketController
 REQUIRED DEPENDENCIES
 ###
 _ = require 'underscore'
-#$ = require 'jquery'
 io = require 'socket.io'
 
 

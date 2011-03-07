@@ -63,7 +63,6 @@ CreateButton = function(selector, precall, postcall, callback) {
 			$.ajax({
 			  url: attrHref,
 			  success: function(data){
-			    console.log('ajax success: ' + data);
 			    attrCallback($(this), data);
 			  }
 			});

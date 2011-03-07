@@ -35,7 +35,7 @@ lobby = {
 		$('#link_wrapper').empty();
 
 		html = '<div style="padding-top: 10px;">'+
-					'<a href="/ajax.html?action=addInstance" precall="lobby.add.precall" callback="lobby.add.callback" class="ajax" id="add_link">Add instance</a>'+
+					'<a href="/ajax.html?action=addInstance" precall="lobby.addInstance.precall" callback="lobby.addInstance.callback" class="ajax" id="add_link">Add instance</a>'+
 				'</div>';
 		link.append(html);
 
@@ -45,34 +45,32 @@ lobby = {
 
 		_.each(instanceList, function(key, instanceData){
 			i = key.instanceId;
-			lobby.addInstance(i);
+			lobby.addInstanceLinks(i);
 		});
 	},
-	addInstance: function(i){
+	addInstanceLinks: function(i){
 		var link = $('#link_wrapper');
 		var html;
 		html = '<div id="wrapper_'+i+'" style="padding-top: 10px;">'+
-					'<a href="/ajax.html?action=enterInstance&instanceId='+i+'" precall="lobby.enter.precall" callback="lobby.enter.callback" class="ajax" id="enter_link'+i+'">Enter Instance '+i+'</a><br/>'+
-					'<a href="/ajax.html?action=removeInstance&instanceId='+i+'" precall="lobby.remove.precall" callback="lobby.remove.callback" class="ajax" id="remove_link'+i+'">Remove Instance '+i+'</a>'+
+					'<a href="/ajax.html?action=enterInstance&instanceId='+i+'" precall="lobby.enterInstance.precall" callback="lobby.enterInstance.callback" class="ajax" id="enter_link'+i+'">Enter Instance '+i+'</a><br/>'+
+					'<a href="/ajax.html?action=removeInstance&instanceId='+i+'" precall="lobby.removeInstance.precall" callback="lobby.removeInstance.callback" class="ajax" id="remove_link'+i+'">Remove Instance '+i+'</a>'+
 				'</div>';
 		link.append(html);
 	},
-	add: {
+	addInstance: {
 		precall: function(target, data){
-			console.log('in precall with: ' + data);
 		},
 		callback: function(target, data){
 			var obj = $.parseJSON(data);
 			var id = obj.instanceId || null;
 			console.log('in callback with: ' + data);
 			if(id){
-				lobby.addInstance(id);
+				lobby.addInstanceLinks(id);
 			}
 		}
 	},
-	enter: {
+	enterInstance: {
 		precall: function(target, data){
-			console.log('in precall with: ' + data);
 		},
 		callback: function(target, data){
 			console.log('in callback with: ' + data);
@@ -87,6 +85,8 @@ lobby = {
 				$('leave_link'+id).bind('click', function(){
 					lobby.leaveInstance($(this));
 				});
+
+				order66(id);
 
 			}
 		}
@@ -103,9 +103,8 @@ lobby = {
 			});
 		}
 	},
-	remove: {
+	removeInstance: {
 		precall: function(target, data){
-			console.log('in precall with: ' + data);
 		},
 		callback: function(target, data){
 			var obj = $.parseJSON(data);
@@ -118,21 +117,21 @@ lobby = {
 	}
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 $(document).ready(function() {
-
-	if(!("WebSocket" in window)){
-		$('#chatLog, input, button, #examples').fadeOut("fast");
-		$('<p>Oh no, you need a browser that supports WebSockets. How about <a href="http://www.google.com/chrome">Google Chrome</a>?</p>').appendTo('#container');
-	}else{
-
-		lobby.create();
-
-		var wrapper = function(index){
-			order66(index);
-			console.log('hitting link for index: ' + index);
-		}
-		
-	}
+	lobby.create();
 });
 </script>
 <meta charset=utf-8 />
