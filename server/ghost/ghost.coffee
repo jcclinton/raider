@@ -66,6 +66,7 @@ class List
         delete @table[id]
 
     get: (id) ->
+        logger.log "trying to get #{id} from #{JSON.stringify @table[id]} of #{JSON.stringify @table}", 1
         @table[id]
 
     getAll: ->
@@ -244,21 +245,9 @@ class Instance
 
     addClient: (client) ->
         @clientList.add client
-
-        #send all existing sprites to the new client
-        sprites = @spriteList.getAll()
-        for id of sprites
-            sprite = @spriteList.get id
-            data =
-                command: 'create'
-                uid: sprite.getUid()
-                id: sprite.getId()
-                text: 'initially create other objects'
-                x: sprite.getX()
-                y: sprite.getY()
-                # game specific here
-                team: sprite.getTeam()
-            client.send data
+        client.instanceId = @instanceId
+        masterList.add client.sessionId, client
+        logger.log "adding #{client.sessionId} to #{JSON.stringify masterList}",1
 
     sendAll: (data, excludeUid) =>
         clients = @clientList.getAll()
@@ -279,37 +268,21 @@ class Instance
 client class for storing client info
 ###
 class Client
-    constructor: (@clientSocket) ->
+    constructor: (@sessionId) ->
+        true
+    setSocket: (@clientSocket) ->
         @uid = @clientSocket.sessionId
-                # game specific here
         @team = if @uid % 2 == 0 then 'light' else 'dark'
-        @instance = null
     init: ->
         true
-
     send: (data) ->
-        msg = jsonController.makeResponse data, @clientSocket.sessionId
-        logger.log ">>>>>> sending to uid: #{@clientSocket.sessionId} #{msg}", 1
-        @clientSocket.send msg
+        if @clientSocket
+            msg = jsonController.makeResponse data, @clientSocket.sessionId
+            logger.log ">>>>>> sending to uid: #{@clientSocket.sessionId} #{msg}", 1
+            @clientSocket.send msg
         false
-    getInstance: ->
-        @instance
-
     getTeam: ->
         @team
-
-    attachToInstance: (data)->
-        logger.log "adding #{@uid} to instance #{data.iId}", 2
-        iId = data.iId
-        instance = instanceList.get iId
-        if not instance
-            instanceList.add iId
-            instance = instanceList.get iId
-
-
-        #console.log "attaching to instance: #{iId}"
-        instance.addClient this
-        @instance = instance
 
 
 
@@ -343,23 +316,17 @@ class SocketController
     constructor: (server)->
         @masterSocket = io.listen server
 
-
-
-        server.addListener 'request', (req, res) ->
-            if ('/favicon.ico' != req.url)
-                id = req.sessionID
-                #console.log "ZOMG: #{id}"
-
-
-        #hack to get instance initialized
-        #instanceId = @instanceList.add()
-        #instance = @instanceList.get instanceId
+        @currentSessionId = 0
 
         @masterSocket.on 'connection', (clientSocket) =>
-
-            client = new Client clientSocket
-            # init will hold any custom code by the end user to be run on client contsruction
-            client.init()
+            #is there an easier way to get the sid than this:
+            sid = clientSocket.request.headers.cookie.split 'connect.sid='
+            sid = sid[1]
+            console.log "sid: #{sid}"
+            client = masterList.get sid
+            masterList.remove client.sessionId
+            client.setSocket clientSocket
+            instance = instanceList.get client.instanceId
 
             #send init function to this client to initialize interface
             data =
@@ -368,25 +335,45 @@ class SocketController
                 text: 'initializing new client'
             client.send data
 
+
+            #send all existing sprites to the new client
+            sprites = instance.spriteList.getAll()
+            for id of sprites
+                sprite = @spriteList.get id
+                data =
+                    command: 'create'
+                    uid: sprite.getUid()
+                    id: sprite.getId()
+                    text: 'initially create other objects'
+                    x: sprite.getX()
+                    y: sprite.getY()
+                    # game specific here
+                    team: sprite.getTeam()
+                client.send data
+
+
             clientSocket.on 'message', (data) =>
                 logger.log "<<< receiving from uid: #{client.uid} #{data}", 1
                 obj = jsonController.getObject data
                 action = obj.action
                 uid = obj.uid
+                returnData = obj.returnData || true;
 
-                inst = client.getInstance()
+                if not _.isFunction client[action]
+                    logger.log "WARNING: no action: '#{action}' in Client", 1
+                else
+                    obj = (client[action])(obj, instance.spriteList)
+                    if obj
+                        clients = instance.clientList.getAll()
+                        for clientId, otherClient of clients
 
-                if not _.isNull inst
-                    if not _.isFunction client[action]
-                        logger.log "WARNING: no action: '#{action}' in Client", 1
-                    else
-                        retData = (client[action])(obj, inst.spriteList)
-                        if retData
-                            clients = inst.clientList.getAll()
-                            for clientId, otherClient of clients
-                                otherClient.send retData
-                else if action == 'instance'
-                    client.attachToInstance(obj)
+                            # if we dont want to send data to this client:
+                            if clientId == client.uid && returnData == false
+                                shouldSend = false
+                            else
+                                shouldSend = true
+
+                            otherClient.send obj if shouldSend
 
 
                 #console.log "ran command: #{action}"
@@ -405,7 +392,9 @@ _ = require 'underscore'
 io = require 'socket.io'
 
 
-instanceList = new Instances
+masterList = new List()
+
+instanceList = new Instances()
 logger = new consoleWrapper()
 
 Ghost =
@@ -416,9 +405,8 @@ Ghost =
     getSprite:
         ->
             Sprite
-    getClient:
-        ->
-            Client
+    Client: Client
+    instanceList: instanceList
     getInstanceList:
         ->
             instanceList

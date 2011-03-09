@@ -21,7 +21,7 @@ server = connect(
     connect.favicon(),
     (req, res, next) ->
         sess = req.session
-        id = req.sessionID
+
 
         ajax = false
 
@@ -62,8 +62,10 @@ server = connect(
                     data["instanceId"] = id
             else if query.action == "enterInstance"
                 id = parseInt query.instanceId
-                exists = instanceList.get id
-                if exists and _.isNumber id
+                instance = instanceList.get id
+                if instance and _.isNumber id
+                    client = new ghost.Client sess.id
+                    instance.addClient client
                     data["instanceId"] = id
             else if query.action == "addInstance"
                 start = 0
@@ -153,12 +155,10 @@ Sprite::getTeam = ->
 
 
 
-Client = ghost.getClient()
-
-Client::init = ->
+ghost.Client::init = ->
 	true
 
-Client::add = (data, spriteList)->
+ghost.Client::add = (data, spriteList)->
     ghost.log "adding sprite (in client.add)", 2
     sprite = spriteList.add @uid, @team
 
@@ -171,7 +171,7 @@ Client::add = (data, spriteList)->
         command: 'create'
         text: 'create new object'
 
-Client::move = (data, spriteList)->
+ghost.Client::move = (data, spriteList)->
     sprite = spriteList.get data.id
     sprite.move data
     ghost.log "moving", 2
@@ -183,7 +183,7 @@ Client::move = (data, spriteList)->
         command: 'move'
         text: 'moving'
 
-Client::fire = (data)->
+ghost.Client::fire = (data)->
     ghost.log "firing", 2
     obj =
         uid: data.uid

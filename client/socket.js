@@ -567,7 +567,7 @@ var order66 = function(instanceIndex){
 					});
 			}else if(msg.command == 'init'){
 				client = new Client({uid: msg.uid});
-				var msg = '{"action":"instance", "iId":'+instanceIndex+', "uid": '+uid+'}';
+				//var msg = '{"action":"instance", "iId":'+instanceIndex+', "uid": '+uid+'}';
 
 				// do all bindings here since they dont make sense unless the client is initialized
 				$('#disconnect').bind('click', function(){socketController.close();});
@@ -585,7 +585,7 @@ var order66 = function(instanceIndex){
 
 				});
 
-				socketController.send(msg);
+				//socketController.send(msg);
 			}else{
 				var e = unitList.get(id);
 				if(msg.command == 'create'){
