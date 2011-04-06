@@ -84,7 +84,10 @@ server = connect(
             else
                 console.warn 'doh!'
 
-            str = JSON.stringify data
+            try
+                str = JSON.stringify data
+            catch error
+                str = 'ERROR'
             console.log "sending: #{str}"
             res.end str
         else

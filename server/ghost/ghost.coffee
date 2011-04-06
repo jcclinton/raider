@@ -66,7 +66,16 @@ class List
         delete @table[id]
 
     get: (id) ->
-        logger.log "trying to get #{id} from #{JSON.stringify @table[id]} of #{JSON.stringify @table}", 1
+        try
+            full_table = JSON.stringify @table
+        catch error
+            full_table = 'ERROR'
+        try
+            specific_table = JSON.stringify @table[id]
+        catch error
+            specific_table = 'ERROR'
+
+        logger.log "trying to get #{id} from #{specific_table} of #{full_table}", 1
         @table[id]
 
     getAll: ->
@@ -201,7 +210,10 @@ jsonController =
             "{\"status\": \"success\",#{str} \"is_me\": #{is_me}}"
     getObject:
         (msg) ->
-            JSON.parse msg
+            try
+                JSON.parse msg
+            catch error
+                {}
 
 
 
@@ -247,7 +259,12 @@ class Instance
         @clientList.add client
         client.instanceId = @instanceId
         masterList.add client.sessionId, client
-        logger.log "adding #{client.sessionId} to #{JSON.stringify masterList}",1
+
+        try
+            specific_table = JSON.stringify masterList
+        catch error
+            specific_table = 'ERROR'
+        logger.log "adding #{client.sessionId} to #{specific_table}",1
 
     sendAll: (data, excludeUid) =>
         clients = @clientList.getAll()
@@ -321,9 +338,13 @@ class SocketController
         @masterSocket.on 'connection', (clientSocket) =>
             #is there an easier way to get the sid than this:
             sid = clientSocket.request.headers.cookie.split 'connect.sid='
-            sid = sid[1]
-            console.log "sid: #{sid}"
+            sid = unescape sid[1]
             client = masterList.get sid
+            
+            if client == undefined
+                return false
+
+
             masterList.remove client.sessionId
             client.setSocket clientSocket
             instance = instanceList.get client.instanceId
@@ -379,9 +400,8 @@ class SocketController
                 #console.log "ran command: #{action}"
 
             clientSocket.on 'disconnect', =>
-                inst = client.getInstance()
-                inst.clientList.remove clientSocket.sessionId if inst?
-                inst.spriteList.removeAllOfUser clientSocket.sessionId if inst?
+                instance.clientList.remove clientSocket.sessionId
+                instance.spriteList.removeAllOfUser clientSocket.sessionId
                 logger.log 'disconnecting', 1
 
 
