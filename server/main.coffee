@@ -4,7 +4,7 @@ fs = require 'fs'
 url = require 'url'
 _ = require 'underscore'
 
-ex = require '/home/public_html/65.49.73.225/public/server/ghost/ghost.coffee'
+ex = require './ghost/ghost.coffee'
 ghost = ex.getGhost
 instanceList = ghost.getInstanceList()
 instanceList.add 1
