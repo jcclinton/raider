@@ -248,8 +248,8 @@ var order66 = function(instanceIndex){
 		  	}else{
 			  	this.model.bind('moveUnit', this.moveThem);
 		  	}
-			  	var ev = {'mousedown': 'select'};
-			  	this.handleEvents(ev);
+			  	var ev = {"mousedown": 'select'};
+			  	//this.delegateEvents(ev);
 			  this.model.bind('change:selected', this.toggleSelected);
 			unitList.bind('remove:'+this.model.id, this.remove);
 
@@ -314,26 +314,34 @@ var order66 = function(instanceIndex){
 			  //$(this.el).unbind();
 			  if (!(events || (events = this.events))) return this;
 			  for (var key in events) {
-			    var methodName = events[key];
-			    var match = key.match(eventSplitter);
-			    var eventName = match[1], selector = match[2];
-			    var method = _.bind(this[methodName], this);
-			    el = el || '#canvas';
-			    if (selector === '' || eventName == 'change') {
-			    	if(el === 'document'){
-			    		$(document).bind(eventName, method);
-			    	}else{
-			    		$(el).bind(eventName, method);
-			    	}
-			    } else {
-			      $(el).delegate(selector, eventName, method);
-			    }
+			  	if(events.hasOwnProperty(key)){
+				    var methodName = events[key];
+				    var match = key.match(eventSplitter);
+				    var eventName = match[1], selector = match[2];
+				    var method = _.bind(this[methodName], this);
+				    el = el || '#canvas';
+				    if (selector === '' || eventName == 'change') {
+				    	if(el === 'document'){
+				    		$(document).bind(eventName, method);
+				    	}else{
+				    		$(el).bind(eventName, method);
+				    	}
+				    } else {
+				      $(el).delegate(selector, eventName, method);
+				    }
+				}
 			  }
 			  return this;
 			},
 
 		  moveMe: function(e){
-		  	if(e.which == 1 || e.which == 2 || !this.model.isSelected() || !this.model.isMe()){
+		  	if(e.which === 1  && !this.model.isSelected()){
+			  	console.log('selected!');
+			  	this.model.set({selected: 1});
+			  	return this;
+			  }
+
+		  	if(e.which == 1 || e.which == 2 || !this.model.isMe()){
 		  		console.log('not moving!');
 		  		return this;
 		  	}
@@ -646,7 +654,17 @@ var order66 = function(instanceIndex){
 		},
 
 		getMessageObject : function(msg){
-			return $.parseJSON(msg);
+			var o
+				, e
+				;
+
+			try{
+				o = $.parseJSON(msg);
+			}catch(e){
+				o = 'doh';
+			}
+
+			return o;
 		},
 
 		message : function(msg, type){

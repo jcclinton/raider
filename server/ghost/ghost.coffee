@@ -66,16 +66,6 @@ class List
         delete @table[id]
 
     get: (id) ->
-        try
-            full_table = JSON.stringify @table
-        catch error
-            full_table = 'ERROR'
-        try
-            specific_table = JSON.stringify @table[id]
-        catch error
-            specific_table = 'ERROR'
-
-        logger.log "trying to get #{id} from #{specific_table} of #{full_table}", 1
         @table[id]
 
     getAll: ->
@@ -340,7 +330,7 @@ class SocketController
             sid = clientSocket.request.headers.cookie.split 'connect.sid='
             sid = unescape sid[1]
             client = masterList.get sid
-            
+
             if client == undefined
                 return false
 
