@@ -276,6 +276,7 @@ client class for storing client info
 ###
 class Client
     constructor: (@sessionId) ->
+        @uid = @sessionId
         true
     setSocket: (@clientSocket) ->
         @uid = @clientSocket.sessionId
@@ -390,8 +391,8 @@ class SocketController
                 #console.log "ran command: #{action}"
 
             clientSocket.on 'disconnect', =>
-                instance.clientList.remove clientSocket.sessionId
-                instance.spriteList.removeAllOfUser clientSocket.sessionId
+                instance.clientList.remove sid
+                instance.spriteList.removeAllOfUser sid
                 logger.log 'disconnecting', 1
 
 
