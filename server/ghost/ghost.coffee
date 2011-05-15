@@ -351,7 +351,7 @@ class SocketController
             #send all existing sprites to the new client
             sprites = instance.spriteList.getAll()
             for id of sprites
-                sprite = instance.spriteList.get id
+                sprite = @spriteList.get id
                 data =
                     command: 'create'
                     uid: sprite.getUid()
@@ -392,7 +392,7 @@ class SocketController
 
             clientSocket.on 'disconnect', =>
                 instance.clientList.remove sid
-                instance.spriteList.removeAllOfUser clientSocket.sessionId
+                instance.spriteList.removeAllOfUser sid
                 logger.log 'disconnecting', 1
 
 
