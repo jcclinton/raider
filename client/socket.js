@@ -243,12 +243,12 @@ var order66 = function(instanceIndex){
   			_.bindAll(this, 'moveThem', 'moveMe', 'remove', 'createEvents', 'toggleSelected');
 		  	this.model.view = this;
 		  	if(this.model.isMe()){
-		  		this.createEvents();
+			  	var ev = {"mousedown": 'moveMe'};
+		  		this.createEvents(ev);
 		  		this.createEvents({'keydown':'fireProjectile'}, 'document');
 		  	}else{
 			  	this.model.bind('moveUnit', this.moveThem);
 		  	}
-			  	var ev = {"mousedown": 'select'};
 			  	//this.delegateEvents(ev);
 			  this.model.bind('change:selected', this.toggleSelected);
 			unitList.bind('remove:'+this.model.id, this.remove);
@@ -258,7 +258,7 @@ var order66 = function(instanceIndex){
 		  },
 
 		  events: {
-		    "mousedown": "moveMe"
+		    "mousedown": "select"
 		  },
 
 
@@ -335,13 +335,8 @@ var order66 = function(instanceIndex){
 			},
 
 		  moveMe: function(e){
-		  	if(e.which === 1  && !this.model.isSelected()){
-			  	console.log('selected!');
-			  	this.model.set({selected: 1});
-			  	return this;
-			  }
 
-		  	if(e.which == 1 || e.which == 2 || !this.model.isMe()){
+		  	if(e.which === 1 || e.which === 2 || !this.model.isMe() || !this.model.isSelected()){
 		  		console.log('not moving!');
 		  		return this;
 		  	}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<script src="http://cdn.socket.io/stable/socket.io.js"></script>
+<script type="text/javascript">
+
+
+	var socketController = {
+		connect : function(){
+				var host = '65.49.73.225';
+				var options = {port: 80};
+
+				this.socket = new io.Socket(host, options);
+				this.socket.on('connect', open )
+				this.socket.on('message', receive )
+				this.socket.on('disconnect', onclose )
+				this.socket.connect();
+
+
+				var that = this;
+				function open(){
+					that.isConnected = true;
+					that.message('<p class="event">Socket Status: (open)'+'</p>');
+				};
+
+				function onclose(){
+					that.isConnected = false;
+					that.message('<p class="event bad">Socket Status: (Closed)'+'</p>');
+				};
+
+				function receive(msg){
+				};
+		},
+
+		close : function(){
+			this.socket.disconnect();
+			console.log('uhhhh closing?');
+		},
+
+		message : function(msg){
+			$('#chatLog').prepend(msg+'<hr/>');
+		},
+
+		send : function(msg){
+			if(this.isConnected){
+				try{
+					this.socket.send(msg);
+					this.message('<p class="event">Sent: '+msg+'</p>')
+				} catch(exception){
+					console.log(exception);
+					this.message('<p class="warning">doh!</p>');
+				}
+			}else{
+				this.message('<p class="event">Socket not connected!</p>')
+			}
+		}
+	}
+
+	$(document).ready(function(){
+		socketController.connect();
+
+
+		$('#message').bind('click', function(e){
+			console.log('clicking');
+			socketController.send('hey hey');
+		});
+	});
+
+</script>
+<meta charset=utf-8 />
+<style type="text/css">
+body{font-family:Arial, Helvetica, sans-serif;}
+#container{
+	border:5px solid grey;
+	width:300px;
+	margin:0 auto;
+	padding:10px;
+}
+#chatLog{
+	padding:5px;
+	border:1px solid black;
+	height: 300px;
+	overflow: scroll;
+}
+#chatLog p{margin:0;}
+.event{color:#999;}
+.warning{
+	font-weight:bold;
+	color:#CCC;
+}
+.bad{
+	color: red;
+}
+
+.fl{
+	float:left;
+}
+
+.selectedUnit{
+	outline: 1px red solid;
+}
+
+.selectedUnitOther{
+	outline: 1px blue solid;
+}
+
+.game_board{
+	outline:1px solid black;
+	height:400px;
+	width:400px;
+	position:relative;
+}
+</style>
+<title>Ghost</title>
+
+</head>
+<body>
+	<button id="message">Message</button>
+
+    <div id="chatLog">
+
+    </div>
+</body>
+</html>
