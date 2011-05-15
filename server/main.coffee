@@ -91,7 +91,7 @@ server = connect(
             console.log "sending: #{str}"
             res.end str
         else
-            fs.readFile "/home/public_html/65.49.73.225/public#{name}", (err, page) ->
+            fs.readFile "../#{name}", (err, page) ->
                 res.end page
 )
 

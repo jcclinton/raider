@@ -1,0 +1,4 @@
+option '-o', '--output [DIR]', 'directory for compiled code'
+
+task 'run:server', 'run server', ()->
+	require './main.coffee'
